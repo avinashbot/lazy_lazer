@@ -2,8 +2,8 @@
 
 require 'spec_helper'
 
-RSpec.describe LazyLaser do
+RSpec.describe LazyLazer do
   it 'has a version number' do
-    expect(LazyLaser::VERSION).not_to be nil
+    expect(LazyLazer::VERSION).not_to be nil
   end
 end

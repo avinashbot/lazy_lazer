@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-require 'lazy_laser/version'
+require_relative 'lazy_lazer/version'
 
 # LazyLazer is a lazy loading model.
-module LazyLaser
+module LazyLazer
   # Your code goes here...
 end

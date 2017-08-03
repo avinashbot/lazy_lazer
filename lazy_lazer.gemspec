@@ -3,16 +3,16 @@
 
 lib = File.expand_path('../lib', __FILE__)
 $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
-require 'lazy_laser/version'
+require 'lazy_lazer/version'
 
 Gem::Specification.new do |spec|
-  spec.name     = 'lazy_laser'
-  spec.version  = LazyLaser::VERSION
+  spec.name     = 'lazy_lazer'
+  spec.version  = LazyLazer::VERSION
   spec.authors  = ['Avinash Dwarapu']
   spec.email    = ['avinash@dwarapu.me']
 
   spec.summary  = 'Create lazily loadable models.'
-  spec.homepage = 'https://github.com/avinashbot/lazy_laser'
+  spec.homepage = 'https://github.com/avinashbot/lazy_lazer'
 
   spec.files = `git ls-files -z`.split("\x0").reject do |f|
     f.match(%r{^(test|spec|features)/})
