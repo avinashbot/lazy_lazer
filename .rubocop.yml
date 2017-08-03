@@ -1,0 +1,9 @@
+AllCops:
+  TargetRubyVersion: 2.3
+
+Metrics/LineLength:
+  Max: 100
+
+# Dumb, but also brand new.
+Style/NumericPredicate:
+  Enabled: false
