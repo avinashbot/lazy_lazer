@@ -79,17 +79,16 @@ module LazyLazer
     def read_attribute(name)
       return @_lazer_attribute_cache[name] if @_lazer_attribute_cache.key?(name)
       reload if self.class.properties.key?(name) && !fully_loaded?
+      options = self.class.properties[name] || {}
 
-      key_name = (self.class.properties[name] || {}).fetch(:from, name)
-
-      has_default = (self.class.properties[name] || {}).key?(:default)
-      if !@_lazer_attribute_source.key?(key_name) && !has_default
+      key_name = options.fetch(:from, name)
+      if !@_lazer_attribute_source.key?(key_name) && !options.key?(:default)
         raise MissingAttribute, "#{key_name} is missing for #{self}"
       end
 
-      value = @_lazer_attribute_source.fetch(key_name, (self.class.properties[name] || {})[:default])
+      value = @_lazer_attribute_source.fetch(key_name, options[:default])
 
-      Utilities.transform_value(value, (self.class.properties[name] || {})[:with], self)
+      Utilities.transform_value(value, options[:with], self)
     end
 
     def write_attribute(attribute, value)
