@@ -35,6 +35,10 @@ RSpec.describe LazyLazer do
     end
   end
 
+  context 'when a model is inherited' do
+    it 'inherits the parent properties'
+  end
+
   describe '#initialize' do
     it 'accepts a Hash of attributes' do
       expect { model_class.new(hello: :world) }.not_to raise_error
@@ -52,8 +56,11 @@ RSpec.describe LazyLazer do
   end
 
   describe '#to_h' do
-    it 'returns a hash'
-    it 'lazy loads attributes if it needs to'
+    it 'returns a hash' do
+      model = model_class.new
+      expect(model.to_h).to be_a(Hash)
+    end
+    it 'loads all the attributes if strict is set to true'
   end
 
   describe '#fully_loaded?' do
@@ -79,6 +86,26 @@ RSpec.describe LazyLazer do
   end
 
   describe '#read_attribute' do
+    context "when the value wasn't found" do
+      context "if the model isn't fully loaded" do
+        it 'calls #reload' do
+          model_class.property :hello, default: nil
+          model = model_class.new
+          expect(model).to receive(:reload)
+          model.hello
+        end
+      end
+
+      context 'when the model is fully loaded' do
+        it 'raises MissingAttribute' do
+          model = model_class.new
+          model.send('fully_loaded=', true)
+          expect { model.read_attribute(:test_attribute) }
+            .to raise_error(LazyLazer::MissingAttribute, /test_attribute/)
+        end
+      end
+    end
+
     context 'when a single-key source mapping is present' do
       it 'performs single key mappings on the model (using :from)' do
         model_class.property(:test_property, from: :source)
@@ -103,10 +130,45 @@ RSpec.describe LazyLazer do
 
     context 'when a :with transformation is provided for a key' do
       context 'when :with is a Proc' do
-        it 'calls the Proc with the value of the key'
-        it 'calls the Proc in the context of the model'
+        it 'calls the Proc with the value of the key' do
+          called_value = nil
+          transformer = lambda do |num|
+            called_value = num
+            num.to_i
+          end
+
+          model_class.property :number, with: transformer
+          model = model_class.new(number: '2')
+          model.number
+
+          expect(called_value).to eq('2')
+          expect(model.number).to eq(2)
+        end
+
+        it 'calls the Proc in the context of the model' do
+          context = nil
+          transformer = lambda do |num|
+            context = self
+            num.to_i
+          end
+
+          model_class.property :number, with: transformer
+          model = model_class.new(number: '2')
+          model.number
+
+          expect(context).to be_a(model_class)
+        end
+
         context 'when a value is not found but a default is provided' do
-          it 'calls the Proc with the value of the default'
+          it 'calls the Proc with the value of the default' do
+            transformer = ->(val) { val }
+
+            model_class.property :number, with: transformer, default: '500'
+            model = model_class.new
+            model.number
+
+            expect(model.number).to eq('500')
+          end
         end
       end
 
@@ -119,7 +181,20 @@ RSpec.describe LazyLazer do
     end
   end
 
+  describe '#write_attribute' do
+    it 'updates the value of the provided key' do
+      model = model_class.new
+      model.write_attribute(:new_attribute, 'new value')
+      expect(model.read_attribute(:new_attribute)).to eq('new value')
+    end
+  end
+
   describe '#assign_attributes' do
-    it 'merges the attributes into the model'
+    it 'calls #write_attribute for each provided pair' do
+      model = model_class.new
+      expect(model).to receive(:write_attribute).with(:one, 1)
+      expect(model).to receive(:write_attribute).with(:two, 2)
+      model.assign_attributes(one: 1, two: 2)
+    end
   end
 end

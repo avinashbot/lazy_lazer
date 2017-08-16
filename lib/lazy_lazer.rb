@@ -2,6 +2,7 @@
 
 require_relative 'lazy_lazer/version'
 require_relative 'lazy_lazer/errors'
+require_relative 'lazy_lazer/utilities'
 
 # LazyLazer is a lazy loading model.
 module LazyLazer
@@ -12,12 +13,18 @@ module LazyLazer
   def self.included(base)
     base.extend(ClassMethods)
     base.include(InstanceMethods)
+
     base.instance_variable_set(:@_lazer_properties, {})
     base.instance_variable_set(:@_lazer_required_properties, [])
   end
 
   # The methods to extend the class with.
   module ClassMethods
+    def self.inherited(klass)
+      klass.instance_variable_set(:@_lazer_properties, @_lazer_properties)
+      klass.instance_variable_set(:@_lazer_required_properties, @_lazer_required_properties)
+    end
+
     # @return [Hash<Symbol, Hash>] defined properties and their options
     def properties
       @_lazer_properties
@@ -38,7 +45,7 @@ module LazyLazer
       sym_name = name.to_sym
       properties[sym_name] = options
       @_lazer_required_properties << sym_name if options[:required]
-      sym_name
+      define_method(name) { read_attribute(name) }
     end
   end
 
@@ -49,28 +56,54 @@ module LazyLazer
     # @param [Hash] attributes the model attributes
     # @return [void]
     def initialize(attributes = {})
+      # Check all required attributes.
       self.class.instance_variable_get(:@_lazer_required_properties).each do |prop|
-        raise RequiredAttribute, "#{self.class} requires `#{prop}`" unless attributes.key?(prop)
+        raise RequiredAttribute, "#{self} requires `#{prop}`" unless attributes.key?(prop)
       end
-      @_lazer_attributes = {}
+
+      @_lazer_attribute_remaining = self.class.properties.dup
+      @_lazer_attribute_source = {}
+      @_lazer_attribute_cache = {}
       assign_attributes(attributes)
     end
 
-    def to_h
+    def to_h(_strict = false)
       # TODO: coerce all attributes before return
-      @_lazer_attributes
-    end
-
-    def fully_loaded?
-      @_lazer_fully_loaded ||= false
+      @_lazer_attribute_source
     end
 
     def reload; end
 
+    # @note this differs from the Rails implementation and raises {MissingAttribute} if the
+    #   attribute wasn't found.
+    def read_attribute(name)
+      return @_lazer_attribute_cache[name] if @_lazer_attribute_cache.key?(name)
+      reload if self.class.properties.key?(name) && !fully_loaded?
+
+      key_name = (self.class.properties[name] || {}).fetch(:from, name)
+
+      has_default = (self.class.properties[name] || {}).key?(:default)
+      if !@_lazer_attribute_source.key?(key_name) && !has_default
+        raise MissingAttribute, "#{key_name} is missing for #{self}"
+      end
+
+      value = @_lazer_attribute_source.fetch(key_name, (self.class.properties[name] || {})[:default])
+
+      Utilities.transform_value(value, (self.class.properties[name] || {})[:with], self)
+    end
+
+    def write_attribute(attribute, value)
+      @_lazer_attribute_source[attribute] = value
+    end
+
     def assign_attributes(new_attributes)
-      @_lazer_attributes.merge!(new_attributes)
+      new_attributes.each { |key, value| write_attribute(key, value) }
     end
     alias attributes= assign_attributes
+
+    def fully_loaded?
+      @_lazer_fully_loaded ||= false
+    end
 
     private
 
