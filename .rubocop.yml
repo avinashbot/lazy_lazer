@@ -7,3 +7,8 @@ Metrics/LineLength:
 # Dumb, but also brand new.
 Style/NumericPredicate:
   Enabled: false
+
+# Stop rubocop from complaining about large `describe` blocks.
+Metrics/BlockLength:
+  Exclude:
+    - spec/**/*_spec.rb
