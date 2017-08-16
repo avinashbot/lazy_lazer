@@ -12,13 +12,15 @@ module LazyLazer
   def self.included(base)
     base.extend(ClassMethods)
     base.include(InstanceMethods)
+    base.instance_variable_set(:@_lazer_properties, {})
+    base.instance_variable_set(:@_lazer_required_properties, [])
   end
 
   # The methods to extend the class with.
   module ClassMethods
     # @return [Hash<Symbol, Hash>] defined properties and their options
     def properties
-      @_lazer_properties ||= {}
+      @_lazer_properties
     end
 
     # Define a property.
@@ -35,19 +37,21 @@ module LazyLazer
     def property(name, **options)
       sym_name = name.to_sym
       properties[sym_name] = options
-      (@_lazer_required_properties ||= []) << sym_name if options[:required]
+      @_lazer_required_properties << sym_name if options[:required]
       sym_name
     end
   end
 
   # The base model class. This could be included directly.
   module InstanceMethods
-    # Initalizer.
+    # Initializer.
     #
-    # @param [Hash] attributes the initialization attributes
+    # @param [Hash] attributes the model attributes
     # @return [void]
     def initialize(attributes = {})
-      # avoid clashing with other people's code
+      self.class.instance_variable_get(:@_lazer_required_properties).each do |prop|
+        raise RequiredAttribute, "#{self.class} requires `#{prop}`" unless attributes.key?(prop)
+      end
       @_lazer_attributes = {}
       assign_attributes(attributes)
     end
