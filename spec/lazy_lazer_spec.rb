@@ -9,6 +9,10 @@ RSpec.describe LazyLazer do
     expect(LazyLazer::VERSION).not_to be nil
   end
 
+  context 'when a model is inherited' do
+    it 'inherits the parent properties'
+  end
+
   describe '.properties' do
     it 'returns a hash' do
       expect(model_class.properties).to eq({})
@@ -33,10 +37,6 @@ RSpec.describe LazyLazer do
       model_class.property(:test_property)
       expect(model_class).to be_method_defined(:test_property)
     end
-  end
-
-  context 'when a model is inherited' do
-    it 'inherits the parent properties'
   end
 
   describe '#initialize' do
@@ -173,9 +173,19 @@ RSpec.describe LazyLazer do
       end
 
       context 'when :with is a Symbol' do
-        it 'calls the appropriate method on the returned value'
+        it 'calls the appropriate method on the returned value' do
+          receiver = double(:receiver)
+          expect(receiver).to receive(:to_abc)
+          model_class.property :test_property, with: :to_abc
+          model_class.new(test_property: receiver).test_property
+        end
         context 'when a value is not found but a default is provided' do
-          it 'calls the method on the value of the default'
+          it 'calls the method on the value of the default' do
+            receiver = double(:receiver)
+            expect(receiver).to receive(:to_abc)
+            model_class.property :test_property, with: :to_abc, default: receiver
+            model_class.new.test_property
+          end
         end
       end
     end

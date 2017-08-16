@@ -81,14 +81,15 @@ module LazyLazer
       reload if self.class.properties.key?(name) && !fully_loaded?
       options = self.class.properties[name] || {}
 
-      key_name = options.fetch(:from, name)
+      key_name = Utilities.source_key(@_lazer_attribute_source, options.fetch(:from, name))
       if !@_lazer_attribute_source.key?(key_name) && !options.key?(:default)
         raise MissingAttribute, "#{key_name} is missing for #{self}"
       end
 
-      value = @_lazer_attribute_source.fetch(key_name, options[:default])
-
-      Utilities.transform_value(value, options[:with], self)
+      value = Utilities.lookup_default(@_lazer_attribute_source, key_name, options[:default])
+      value = Utilities.transform_value(value, options[:with], self)
+      @_lazer_attribute_remaining.delete(name)
+      value
     end
 
     def write_attribute(attribute, value)

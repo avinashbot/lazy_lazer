@@ -37,7 +37,7 @@ class User
   # user = User.new(id: 1, first_name: 'John')
   # user.name  #=> 'John'
   # user.first_name  #=> NoMethodError: ...
-  property :last_name, default: ->(last_name) { "#{first_name} <last name>" }
+  property :last_name, default: -> { '<last name>' }
 
   # user = User.new(id: 1, created_at: 1502834161)
   # user.created_at  #=> 2017-08-15 22:56:13 +0100
