@@ -172,6 +172,25 @@ RSpec.describe LazyLazer do
     end
   end
 
+  describe '#[]' do
+    context 'when the attribute exists' do
+      it 'defers to #read_attribute' do
+        model_class.property :hello
+        model = model_class.new(hello: 2)
+        expect(model).to receive(:read_attribute).with(:hello)
+        model[:hello]
+      end
+    end
+
+    context "when the attribute doesn't exist" do
+      it 'returns nil' do
+        model_class.property :hello
+        model = model_class.new
+        expect(model[:hello]).to be_nil
+      end
+    end
+  end
+
   describe '#write_attribute' do
     it 'updates the value of the provided key' do
       model = model_class.new

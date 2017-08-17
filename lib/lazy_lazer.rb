@@ -84,8 +84,6 @@ module LazyLazer
     # Return the value of the attribute.
     # @param [Symbol] name the attribute name
     # @raise MissingAttribute if the key was not found
-    # @note this differs from the Rails implementation and raises {MissingAttribute} if the
-    #   attribute wasn't found.
     def read_attribute(name)
       return @_lazer_attribute_cache[name] if @_lazer_attribute_cache.key?(name)
       reload if self.class.properties.key?(name) && !fully_loaded?
@@ -97,7 +95,14 @@ module LazyLazer
       uncoerced = Utilities.lookup_default(@_lazer_attribute_source, name, options[:default])
       Utilities.transform_value(uncoerced, options[:with])
     end
-    alias [] read_attribute
+
+    # Return the value of the attribute, returning nil if not found
+    # @param [Symbol] name the attribute name
+    def [](name)
+      read_attribute(name)
+    rescue MissingAttribute
+      nil
+    end
 
     # Update an attribute.
     # @param [Symbol] attribute the attribute to update
