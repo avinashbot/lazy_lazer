@@ -7,19 +7,20 @@ require_relative 'lazy_lazer/utilities'
 # LazyLazer is a lazy loading model.
 module LazyLazer
   # Hook into `include LazyLazer`.
-  #
   # @param [Module] base the object to include the methods in
   # @return [void]
   def self.included(base)
     base.extend(ClassMethods)
     base.include(InstanceMethods)
-
     base.instance_variable_set(:@_lazer_properties, {})
     base.instance_variable_set(:@_lazer_required_properties, [])
   end
 
   # The methods to extend the class with.
   module ClassMethods
+    # Copies parent properties into subclasses.
+    # @param [Class] klass the subclass
+    # @return [void]
     def inherited(klass)
       klass.instance_variable_set(:@_lazer_properties, @_lazer_properties)
       klass.instance_variable_set(:@_lazer_required_properties, @_lazer_required_properties)
@@ -65,6 +66,8 @@ module LazyLazer
       @_lazer_attribute_cache = {}
     end
 
+    # @param [Boolean] strict whether to fully load all attributes
+    # @return [Hash] a hash representation of the model
     def to_h(strict = true)
       if strict
         remaining = @_lazer_attribute_source.keys - @_lazer_attribute_cache.keys
@@ -75,8 +78,12 @@ module LazyLazer
       @_lazer_attribute_cache
     end
 
+    # Reload the object.
     def reload; end
 
+    # Return the value of the attribute.
+    # @param [Symbol] name the attribute name
+    # @raise MissingAttribute if the key was not found
     # @note this differs from the Rails implementation and raises {MissingAttribute} if the
     #   attribute wasn't found.
     def read_attribute(name)
@@ -92,21 +99,28 @@ module LazyLazer
     end
     alias [] read_attribute
 
+    # Update an attribute.
+    # @param [Symbol] attribute the attribute to update
+    # @param [Object] value the new value
     def write_attribute(attribute, value)
       @_lazer_attribute_cache[attribute] = value
     end
 
+    # Update multiple attributes at once.
+    # @param [Hash<Symbol, Object>] new_attributes the new attributes
     def assign_attributes(new_attributes)
       new_attributes.each { |key, value| write_attribute(key, value) }
     end
     alias attributes= assign_attributes
 
+    # @return [Boolean] whether the object is done with lazy loading
     def fully_loaded?
       @_lazer_fully_loaded ||= false
     end
 
     private
 
+    # @param [Boolean] state the new state
     def fully_loaded=(state)
       @_lazer_fully_loaded = state
     end

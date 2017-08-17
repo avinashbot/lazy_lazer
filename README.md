@@ -1,7 +1,7 @@
 **lazy lazer**
 
 **features**:
-- simple codebase (~150 lines of code)
+- simple codebase (~100 lines of code)
 - doesn't inherit all of the Hash and Enumerable cruft
 - super lazy, doesn't even parse attributes until it's necessary
 
