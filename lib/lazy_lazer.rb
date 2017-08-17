@@ -20,7 +20,7 @@ module LazyLazer
 
   # The methods to extend the class with.
   module ClassMethods
-    def self.inherited(klass)
+    def inherited(klass)
       klass.instance_variable_set(:@_lazer_properties, @_lazer_properties)
       klass.instance_variable_set(:@_lazer_required_properties, @_lazer_required_properties)
     end
@@ -61,15 +61,18 @@ module LazyLazer
         raise RequiredAttribute, "#{self} requires `#{prop}`" unless attributes.key?(prop)
       end
 
-      @_lazer_attribute_remaining = self.class.properties.dup
-      @_lazer_attribute_source = {}
+      @_lazer_attribute_source = attributes.dup
       @_lazer_attribute_cache = {}
-      assign_attributes(attributes)
     end
 
-    def to_h(_strict = false)
-      # TODO: coerce all attributes before return
-      @_lazer_attribute_source
+    def to_h(strict = true)
+      if strict
+        remaining = @_lazer_attribute_source.keys - @_lazer_attribute_cache.keys
+        remaining.each do |key|
+          @_lazer_attribute_cache[key] = read_attribute(key)
+        end
+      end
+      @_lazer_attribute_cache
     end
 
     def reload; end
@@ -79,21 +82,18 @@ module LazyLazer
     def read_attribute(name)
       return @_lazer_attribute_cache[name] if @_lazer_attribute_cache.key?(name)
       reload if self.class.properties.key?(name) && !fully_loaded?
-      options = self.class.properties[name] || {}
+      options = self.class.properties.fetch(name, {})
 
-      key_name = Utilities.source_key(@_lazer_attribute_source, options.fetch(:from, name))
-      if !@_lazer_attribute_source.key?(key_name) && !options.key?(:default)
-        raise MissingAttribute, "#{key_name} is missing for #{self}"
+      if !@_lazer_attribute_source.key?(name) && !options.key?(:default)
+        raise MissingAttribute, "#{name} is missing for #{self}"
       end
-
-      value = Utilities.lookup_default(@_lazer_attribute_source, key_name, options[:default])
-      value = Utilities.transform_value(value, options[:with], self)
-      @_lazer_attribute_remaining.delete(name)
-      value
+      uncoerced = Utilities.lookup_default(@_lazer_attribute_source, name, options[:default])
+      Utilities.transform_value(uncoerced, options[:with])
     end
+    alias [] read_attribute
 
     def write_attribute(attribute, value)
-      @_lazer_attribute_source[attribute] = value
+      @_lazer_attribute_cache[attribute] = value
     end
 
     def assign_attributes(new_attributes)

@@ -1,7 +1,7 @@
 **lazy lazer**
 
 **features**:
-- simple codebase
+- simple codebase (~150 lines of code)
 - doesn't inherit all of the Hash and Enumerable cruft
 - super lazy, doesn't even parse attributes until it's necessary
 
@@ -14,25 +14,12 @@ class User
   property :id, required: true
 
   # user = User.new(id: 1)
-  # user.name  #=> Error: not provided `name` on #<...>
-  #
-  # user = User.new(id: 1, first_name: 'John')
-  # user.name  #=> 'John'
-  # user.first_name  #=> NoMethodError: ...
-  property :name, from: :first_name
-
-  # user = User.new(id: 1)
   # user.email  #=> nil
   property :email, default: nil
 
   # user = User.new(id: 1)
   # user.preferred_language  #=> :en_US
   property :preferred_language, default: :en_US
-
-  # user = User.new(id: 1, alias: 'Joe')
-  # user.alias  #=> 'Joe'
-  # user.aka  #=> 'Joe'
-  property :alias, from: %i(alias aka other_name)
 
   # user = User.new(id: 1, first_name: 'John')
   # user.name  #=> 'John'

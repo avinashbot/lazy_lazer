@@ -10,7 +10,11 @@ RSpec.describe LazyLazer do
   end
 
   context 'when a model is inherited' do
-    it 'inherits the parent properties'
+    it 'inherits the parent properties' do
+      model_class.property :test_property
+      model_subclass = Class.new(model_class)
+      expect(model_subclass.properties).to have_key(:test_property)
+    end
   end
 
   describe '.properties' do
@@ -60,7 +64,19 @@ RSpec.describe LazyLazer do
       model = model_class.new
       expect(model.to_h).to be_a(Hash)
     end
-    it 'loads all the attributes if strict is set to true'
+
+    it 'loads all the attributes if strict is set to true' do
+      called_value = nil
+      transformer = lambda do |num|
+        called_value = num
+        num.to_i
+      end
+
+      model_class.property :number, with: transformer
+      model = model_class.new(number: '2')
+      model.to_h
+      expect(called_value).to eq('2')
+    end
   end
 
   describe '#fully_loaded?' do
@@ -106,28 +122,6 @@ RSpec.describe LazyLazer do
       end
     end
 
-    context 'when a single-key source mapping is present' do
-      it 'performs single key mappings on the model (using :from)' do
-        model_class.property(:test_property, from: :source)
-        model = model_class.new(source: 'test value')
-        expect(model.read_attribute(:test_property)).to eq('test value')
-      end
-    end
-
-    context 'when a multi-key source mapping is present' do
-      it 'performs multiple-key mappings on the model (using :from)' do
-        model_class.property(:test_property, from: %i[source_one source_two])
-        model = model_class.new(source_one: 'test value')
-        expect(model.read_attribute(:test_property)).to eq('test value')
-      end
-
-      it 'searches for the appropriate source key from left to right' do
-        model_class.property(:test_property, from: %i[source_two source_one source_three])
-        model = model_class.new(source_one: 1, source_two: 2, source_three: 3)
-        expect(model.read_attribute(:test_property)).to eq(2)
-      end
-    end
-
     context 'when a :with transformation is provided for a key' do
       context 'when :with is a Proc' do
         it 'calls the Proc with the value of the key' do
@@ -143,20 +137,6 @@ RSpec.describe LazyLazer do
 
           expect(called_value).to eq('2')
           expect(model.number).to eq(2)
-        end
-
-        it 'calls the Proc in the context of the model' do
-          context = nil
-          transformer = lambda do |num|
-            context = self
-            num.to_i
-          end
-
-          model_class.property :number, with: transformer
-          model = model_class.new(number: '2')
-          model.number
-
-          expect(context).to be_a(model_class)
         end
 
         context 'when a value is not found but a default is provided' do
@@ -179,6 +159,7 @@ RSpec.describe LazyLazer do
           model_class.property :test_property, with: :to_abc
           model_class.new(test_property: receiver).test_property
         end
+
         context 'when a value is not found but a default is provided' do
           it 'calls the method on the value of the default' do
             receiver = double(:receiver)
