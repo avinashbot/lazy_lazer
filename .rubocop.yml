@@ -12,3 +12,11 @@ Style/NumericPredicate:
 Metrics/BlockLength:
   Exclude:
     - spec/**/*_spec.rb
+
+# Lower severity of complexity metrics.
+Metrics/AbcSize:
+  Severity: refactor
+Metrics/CyclomaticComplexity:
+  Severity: refactor
+Metrics/PerceivedComplexity:
+  Severity: refactor

@@ -2,6 +2,7 @@
 
 module LazyLazer
   # Utility methods.
+  # @api private
   module Utilities
     # Get a value from a hash, calling the default if needed.
     # @param [Hash] source the hash to lookup
