@@ -20,3 +20,5 @@ Metrics/CyclomaticComplexity:
   Severity: refactor
 Metrics/PerceivedComplexity:
   Severity: refactor
+Metrics/MethodLength:
+  Severity: refactor
