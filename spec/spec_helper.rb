@@ -10,6 +10,10 @@ RSpec.configure do |config|
   # Disable RSpec exposing methods globally on `Module` and `main`
   config.disable_monkey_patching!
 
+  # Enhancements for running single tests.
+  config.filter_run_when_matching :focus
+  config.default_formatter = 'doc' if config.files_to_run.one?
+
   config.expect_with :rspec do |c|
     c.syntax = :expect
   end
