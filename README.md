@@ -12,7 +12,6 @@ class User
   property :email, default: 'unknown@example.com'
   property :created_at, from: 'creation_time_utc', with: ->(time) { Time.at(time) }
   property :age, with: :to_i
-
   property :favorite_ice_cream
 
   def lazer_reload
@@ -28,6 +27,7 @@ user.email       #=> "unknown@example.com"
 user.created_at  #=> 2017-07-14 03:40:00 +0100
 user.age         #=> 21
 
+user.favorite_ice_cream         #=> "chocolate"
 user.favorite_ice_cream         #=> "chocolate"
 user.reload.favorite_ice_cream  #=> "vanilla"
 ```
