@@ -3,6 +3,8 @@
 </div>
 
 ```ruby
+require 'lazy_lazer'
+
 class User
   include LazyLazer
 
@@ -30,6 +32,8 @@ user.favorite_ice_cream         #=> "chocolate"
 user.reload.favorite_ice_cream  #=> "vanilla"
 ```
 
-- simple codebase (~110 lines of code, ~200 lines of tests)
-- doesn't inherit all of the Hash and Enumerable cruft
-- super lazy, doesn't even parse attributes until it's necessary
+<div align="center">
+licensed under [mit](https://github.com/avinashbot/lazy_lazer/blob/master/LICENSE.txt) -
+created for [redd](https://github.com/avinashbot/redd) -
+logo font is [zaguatica](https://www.behance.net/gallery/3588289/Zaguatica)
+</div>
