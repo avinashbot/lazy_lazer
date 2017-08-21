@@ -17,14 +17,14 @@ hi there thanks for contributing to lazy_lazer
 **tests**
 
 - lazy_lazer is maximum test-driven development
-- there are ~110 lines of source code and ~210 lines of tests
+- there are ~110 lines of source code and ~230 lines of tests
 - consider running `./bin/guard` during development
 - run `rake` and make sure that it passes
 
 **linting**
 
 - make sure rubocop passes
-- no worries the rubocop configuration is pretty lenient
+- no worries the rubocop configuration is pretty chill
 
 **code of conduct**
 

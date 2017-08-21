@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-guard :rspec, cmd: 'bundle exec rspec' do
+guard :rspec, cmd: 'bundle exec rspec --format progress' do
   watch(%r{^spec/.+_spec\.rb$})
   watch(%r{^lib/(.+)\.rb$})     { 'spec' }
   watch('spec/spec_helper.rb')  { 'spec' }
