@@ -35,6 +35,13 @@ RSpec.describe LazyLazer do
       model = model_class.new(hello: 'world', foo: 'bar')
       expect(model.read_attribute(:foo)).to eq('bar')
     end
+    
+    it 'calls #reload and returns the new attribute' do
+      model_class.property(:hello)
+      model = model_class.new
+      expect(model).to receive(:reload).and_return(hello: 'world')
+      expect(model.read_attribute(:hello)).to eq('world')
+    end
 
     context 'when :required is true' do
       it "raises an error when the property isn't supplied" do
