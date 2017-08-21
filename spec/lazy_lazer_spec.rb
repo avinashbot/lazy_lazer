@@ -36,11 +36,33 @@ RSpec.describe LazyLazer do
       expect(model.read_attribute(:foo)).to eq('bar')
     end
     
-    it 'calls #reload and returns the new attribute' do
-      model_class.property(:hello)
-      model = model_class.new
-      expect(model).to receive(:reload).and_return(hello: 'world')
-      expect(model.read_attribute(:hello)).to eq('world')
+    context "when the attribute doesn't exist" do
+      context "when the model isn't fully loaded" do
+        it 'calls #reload and returns the new attribute' do
+          model_class.property(:hello)
+          model = model_class.new
+          expect(model).to receive(:reload).and_return(hello: 'world')
+          expect(model.read_attribute(:hello)).to eq('world')
+        end
+
+        context "if reload doesn't return the expected attribute" do
+          it 'raises a MissingAttribute error' do
+            model_class.property(:hello)
+            model = model_class.new
+            expect(model).to receive(:reload).and_return(foo: 'bar')
+            expect { model.read_attribute(:hello) }.to raise_error(LazyLazer::MissingAttribute, /hello/)
+          end
+        end
+      end
+
+      context 'if the model is fully loaded' do
+        it 'raises a MissingAttribute error' do
+          model_class.property(:hello)
+          model = model_class.new
+          expect(model).to receive(:fully_loaded?).and_return(true)
+          expect { model.read_attribute(:hello) }.to raise_error(LazyLazer::MissingAttribute, /hello/)
+        end
+      end
     end
 
     context 'when :required is true' do
@@ -218,7 +240,7 @@ RSpec.describe LazyLazer do
   describe '#fully_loaded?' do
     it 'is false by default' do
       model = model_class.new
-      expect(model.fully_loaded?).to be(false)
+      expect(model.fully_loaded?).to eq(false)
     end
   end
 
@@ -226,9 +248,9 @@ RSpec.describe LazyLazer do
     it 'updates the result of #fully_loaded?' do
       model = model_class.new
       model.send(:fully_loaded=, true)
-      expect(model.fully_loaded?).to be(true)
+      expect(model.fully_loaded?).to eq(true)
       model.send(:fully_loaded=, false)
-      expect(model.fully_loaded?).to be(false)
+      expect(model.fully_loaded?).to eq(false)
     end
   end
 end
