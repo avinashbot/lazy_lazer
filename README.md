@@ -1,6 +1,6 @@
-<div align="center">
-  <img src="https://raw.githubusercontent.com/avinashbot/lazy_lazer/master/logo.png" width="500"><br>
-</div>
+<p align="center">
+  <img src="https://raw.githubusercontent.com/avinashbot/lazy_lazer/master/logo.png" width="500">
+</p>
 
 ```ruby
 require 'lazy_lazer'
@@ -32,7 +32,7 @@ user.favorite_ice_cream         #=> "chocolate"
 user.reload.favorite_ice_cream  #=> "vanilla"
 ```
 
-<div align="center">
+<p align="center">
 licensed under
 <a href="https://github.com/avinashbot/lazy_lazer/blob/master/LICENSE.txt">mit</a>
 -
@@ -41,4 +41,4 @@ created for
 -
 logo font is
 <a href="https://www.behance.net/gallery/3588289/Zaguatica">zaguatica</a>
-</div>
+</p>
