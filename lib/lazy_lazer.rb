@@ -6,7 +6,7 @@ require_relative 'lazy_lazer/errors'
 # The LazyLazer root that's included
 module LazyLazer
   # Hook into `include LazyLazer`.
-  # @param [Module] base the object to include the methods in
+  # @param base [Module] the object to include the methods in
   # @return [void]
   def self.included(base)
     base.extend(ClassMethods)
@@ -158,7 +158,7 @@ module LazyLazer
 
     # Update an attribute.
     # @param attribute [Symbol] the attribute to update
-    # @param [Object] value the new value
+    # @param value [Object] the new value
     def write_attribute(attribute, value)
       @_lazer_cache[attribute] = value
     end
