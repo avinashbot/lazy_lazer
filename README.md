@@ -33,7 +33,12 @@ user.reload.favorite_ice_cream  #=> "vanilla"
 ```
 
 <div align="center">
-licensed under [mit](https://github.com/avinashbot/lazy_lazer/blob/master/LICENSE.txt) -
-created for [redd](https://github.com/avinashbot/redd) -
-logo font is [zaguatica](https://www.behance.net/gallery/3588289/Zaguatica)
+licensed under
+<a href="https://github.com/avinashbot/lazy_lazer/blob/master/LICENSE.txt">mit</a>
+-
+created for
+<a href="https://github.com/avinashbot/redd">redd</a>
+-
+logo font is
+<a href="https://www.behance.net/gallery/3588289/Zaguatica">zaguatica</a>
 </div>
