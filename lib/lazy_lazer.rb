@@ -118,7 +118,7 @@ module LazyLazer
 
       # Reloads if a key that should be there isn't.
       reload if !@_lazer_source.key?(source_key) &&
-                self.class.lazer_metadata[:required].include?(name) &&
+                self.class.lazer_metadata[:properties].include?(name) &&
                 !fully_loaded?
 
       # Complains if even after reloading, the key is missing (and there's no default).
