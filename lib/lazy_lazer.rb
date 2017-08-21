@@ -3,7 +3,7 @@
 require_relative 'lazy_lazer/version'
 require_relative 'lazy_lazer/errors'
 
-# LazyLazer
+# The LazyLazer root that's included
 module LazyLazer
   # Hook into `include LazyLazer`.
   # @param [Module] base the object to include the methods in
@@ -22,8 +22,8 @@ module LazyLazer
   end
 
   # Get the source key from an instance
-  # @param [Object] instance the instance
-  # @param [Symbol] key the property key
+  # @param instance [Object] the instance
+  # @param key [Symbol] the property key
   # @return [Symbol] the source key if found or the passed key if not found
   def self.source_key(instance, key)
     instance.class.lazer_metadata[:from].fetch(key, key)
@@ -32,7 +32,7 @@ module LazyLazer
   # The methods to extend the class with.
   module ClassMethods
     # Copies parent properties into subclasses.
-    # @param [Class] klass the subclass
+    # @param klass [Class] the subclass
     # @return [void]
     def inherited(klass)
       klass.instance_variable_set(:@lazer_metadata, @lazer_metadata)
@@ -44,8 +44,8 @@ module LazyLazer
     end
 
     # Define a property.
-    # @param [Symbol] name the name of the property method
-    # @param [Hash] options the options to create the property with
+    # @param name [Symbol] the name of the property method
+    # @param options [Hash] the options to create the property with
     # @option options [Boolean] :required (false) whether existence of this property should be
     #   checked on model creation
     # @option options [Object, Proc] :default the default value to return if not provided
@@ -65,7 +65,7 @@ module LazyLazer
   # The methods to extend the instance with.
   module InstanceMethods
     # Create a new instance of the class from a set of source attributes.
-    # @param [Hash] attributes the model attributes
+    # @param attributes [Hash] the model attributes
     # @return [void]
     def initialize(attributes = {})
       # Check that all required attributes exist.
@@ -79,7 +79,7 @@ module LazyLazer
     end
 
     # Converts all the attributes that haven't been converted yet and returns the final hash.
-    # @param [Boolean] strict whether to fully load all attributes
+    # @param strict [Boolean] whether to fully load all attributes
     # @return [Hash] a hash representation of the model
     def to_h(strict = true)
       if strict
@@ -91,14 +91,13 @@ module LazyLazer
 
     # @abstract Provides reloading behaviour for lazy loading.
     # @return [Hash] the result of reloading the hash
-    # @note if necessary, subclasses can make this method private, so this isn't tested.
     def lazer_reload
       self.fully_loaded = true
       {}
     end
 
     # Reload the object. Calls {#lazer_reload}, then merges the results into the internal store.
-    # Also evicts the internal cache of the new keys.
+    # Also clears out the internal cache.
     # @return [self] the updated object
     def reload
       new_attributes = lazer_reload
@@ -108,7 +107,7 @@ module LazyLazer
     end
 
     # Return the value of the attribute.
-    # @param [Symbol] name the attribute name
+    # @param name [Symbol] the attribute name
     # @raise MissingAttribute if the key was not found
     def read_attribute(name)
       # Returns the cached attribute.
@@ -150,7 +149,7 @@ module LazyLazer
     end
 
     # Return the value of the attribute, returning nil if not found
-    # @param [Symbol] name the attribute name
+    # @param name [Symbol] the attribute name
     def [](name)
       read_attribute(name)
     rescue MissingAttribute
@@ -158,14 +157,14 @@ module LazyLazer
     end
 
     # Update an attribute.
-    # @param [Symbol] attribute the attribute to update
+    # @param attribute [Symbol] the attribute to update
     # @param [Object] value the new value
     def write_attribute(attribute, value)
       @_lazer_cache[attribute] = value
     end
 
     # Update multiple attributes at once.
-    # @param [Hash<Symbol, Object>] new_attributes the new attributes
+    # @param new_attributes [Hash<Symbol, Object>] the new attributes
     def assign_attributes(new_attributes)
       new_attributes.each { |key, value| write_attribute(key, value) }
     end
@@ -178,7 +177,7 @@ module LazyLazer
 
     private
 
-    # @param [Boolean] state the new state
+    # @param state [Boolean] the new state
     def fully_loaded=(state)
       @_lazer_fully_loaded = state
     end

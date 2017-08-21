@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
 module LazyLazer
-  VERSION = '0.3.0'
+  # The gem's semantic version number.
+  VERSION = '0.3.1'
 end
