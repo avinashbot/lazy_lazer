@@ -1,9 +1,6 @@
-**lazy lazer**
-
-**features**:
-- simple codebase (~110 lines of code, ~200 lines of tests)
-- doesn't inherit all of the Hash and Enumerable cruft
-- super lazy, doesn't even parse attributes until it's necessary
+<div align="center">
+  <img src="https://raw.githubusercontent.com/avinashbot/lazy_lazer/master/logo.png" width="500"><br>
+</div>
 
 ```ruby
 class User
@@ -32,3 +29,7 @@ user.age         #=> 21
 user.favorite_ice_cream         #=> "chocolate"
 user.reload.favorite_ice_cream  #=> "vanilla"
 ```
+
+- simple codebase (~110 lines of code, ~200 lines of tests)
+- doesn't inherit all of the Hash and Enumerable cruft
+- super lazy, doesn't even parse attributes until it's necessary
