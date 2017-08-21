@@ -35,13 +35,13 @@ RSpec.describe LazyLazer do
       model = model_class.new(hello: 'world', foo: 'bar')
       expect(model.read_attribute(:foo)).to eq('bar')
     end
-    
+
     context "when the attribute doesn't exist" do
-      context "when the model isn't fully loaded" do
+      context "if the model isn't fully loaded" do
         it 'calls #reload and returns the new attribute' do
           model_class.property(:hello)
           model = model_class.new
-          expect(model).to receive(:reload).and_return(hello: 'world')
+          expect(model).to receive(:lazer_reload).and_return(hello: 'world')
           expect(model.read_attribute(:hello)).to eq('world')
         end
 
@@ -49,8 +49,9 @@ RSpec.describe LazyLazer do
           it 'raises a MissingAttribute error' do
             model_class.property(:hello)
             model = model_class.new
-            expect(model).to receive(:reload).and_return(foo: 'bar')
-            expect { model.read_attribute(:hello) }.to raise_error(LazyLazer::MissingAttribute, /hello/)
+            expect(model).to receive(:lazer_reload).and_return(foo: 'bar')
+            expect { model.read_attribute(:hello) }
+              .to raise_error(LazyLazer::MissingAttribute, /hello/)
           end
         end
       end
@@ -60,7 +61,8 @@ RSpec.describe LazyLazer do
           model_class.property(:hello)
           model = model_class.new
           expect(model).to receive(:fully_loaded?).and_return(true)
-          expect { model.read_attribute(:hello) }.to raise_error(LazyLazer::MissingAttribute, /hello/)
+          expect { model.read_attribute(:hello) }
+            .to raise_error(LazyLazer::MissingAttribute, /hello/)
         end
       end
     end
