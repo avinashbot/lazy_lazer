@@ -35,8 +35,9 @@ user.reload.favorite_ice_cream  #=> "vanilla"
 ```
 
 <p align="center">
-licensed under
-<a href="https://github.com/avinashbot/lazy_lazer/blob/master/LICENSE.txt">mit</a>
+<a href="http://www.rubydoc.info/github/avinashbot/lazy_lazer/master">docs</a>
+-
+<a href="https://github.com/avinashbot/lazy_lazer/blob/master/LICENSE.txt">mit licensed</a>
 -
 created for
 <a href="https://github.com/avinashbot/redd">redd</a>
