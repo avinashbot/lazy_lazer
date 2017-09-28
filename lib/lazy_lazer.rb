@@ -85,18 +85,11 @@ module LazyLazer
       @_lazer_model.to_h
     end
 
-    # @abstract Provides reloading behaviour for lazy loading.
-    # @return [Hash] the result of reloading the hash
-    def lazer_reload
-      fully_loaded!
-      {}
-    end
-
     # Reload the object. Calls {#lazer_reload}, then merges the results into the internal store.
     # Also clears out the internal cache.
     # @return [self] the updated object
     def reload
-      new_attributes = lazer_reload
+      new_attributes = lazer_reload.to_h
       @_lazer_model.merge!(new_attributes)
       self
     end
@@ -143,6 +136,13 @@ module LazyLazer
     end
 
     private
+
+    # @abstract Provides reloading behaviour for lazy loading.
+    # @return [Hash] the result of reloading the hash
+    def lazer_reload
+      fully_loaded!
+      {}
+    end
 
     # Mark the model as fully loaded.
     # @return [void]
