@@ -35,13 +35,10 @@ user.reload.favorite_ice_cream  #=> "vanilla"
 ```
 
 <p align="center">
-<a href="http://www.rubydoc.info/github/avinashbot/lazy_lazer/master">docs</a>
--
+<a href="http://www.rubydoc.info/github/avinashbot/lazy_lazer/master">documentation</a> -
+<a href="https://github.com/avinashbot/lazy_lazer/blob/master/CONTRIBUTING.md">contributing</a> -
 <a href="https://github.com/avinashbot/lazy_lazer/blob/master/LICENSE.txt">mit licensed</a>
--
-created for
-<a href="https://github.com/avinashbot/redd">redd</a>
--
-logo font is
-<a href="https://www.behance.net/gallery/3588289/Zaguatica">zaguatica</a>
+<br>
+created for <a href="https://github.com/avinashbot/redd">redd</a> -
+logo font is <a href="https://www.behance.net/gallery/3588289/Zaguatica">zaguatica</a>
 </p>
