@@ -13,6 +13,11 @@ RSpec.describe LazyLazer do
       model = model_class.new(hello: 'world')
       expect(model.hello).to eq('world')
     end
+
+    it 'converts a parameter to a key where the value is true' do
+      model_class.property(:hello, :required)
+      expect { model_class.new }.to raise_error(LazyLazer::RequiredAttribute, /hello/)
+    end
   end
 
   describe '#initialize' do
@@ -28,12 +33,6 @@ RSpec.describe LazyLazer do
       model_class.property(:hello)
       model = model_class.new(hello: 'world')
       expect(model.read_attribute(:hello)).to eq('world')
-    end
-
-    it 'passes through unknown attributes' do
-      model_class.property(:hello)
-      model = model_class.new(hello: 'world', foo: 'bar')
-      expect(model.read_attribute(:foo)).to eq('bar')
     end
 
     context "when the attribute doesn't exist" do
@@ -77,11 +76,6 @@ RSpec.describe LazyLazer do
         model_class.property(:hello, required: true)
         expect { model_class.new(hello: 'world') }.not_to raise_error
       end
-
-      it 'raises an error if :default is also supplied' do
-        expect { model_class.property(:hello, required: true, default: 'world') }
-          .to raise_error(/default|required/)
-      end
     end
 
     context 'when :with is provided' do
@@ -104,7 +98,7 @@ RSpec.describe LazyLazer do
     context 'when :default is provided' do
       context 'when :default is a Proc' do
         it 'calls the Proc in the context of the block' do
-          model_class.property(:return_self, default: ->(_) { self })
+          model_class.property(:return_self, default: ->() { self })
           model = model_class.new
           expect(model.return_self).to eq(model)
         end
@@ -246,13 +240,11 @@ RSpec.describe LazyLazer do
     end
   end
 
-  describe '#fully_loaded=' do
+  describe '#fully_loaded!' do
     it 'updates the result of #fully_loaded?' do
       model = model_class.new
-      model.send(:fully_loaded=, true)
+      model.send(:fully_loaded!)
       expect(model.fully_loaded?).to eq(true)
-      model.send(:fully_loaded=, false)
-      expect(model.fully_loaded?).to eq(false)
     end
   end
 end

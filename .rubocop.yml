@@ -1,24 +1,14 @@
-AllCops:
-  TargetRubyVersion: 2.3
+inherit_from:
+  - http://relaxed.ruby.style/rubocop.yml
 
+AllCops:
+  TargetRubyVersion: 2.4
 Metrics/LineLength:
   Max: 100
-
-# Dumb, but also brand new.
 Style/NumericPredicate:
+  # Dumb, but also brand new.
   Enabled: false
-
-# Stop rubocop from complaining about large `describe` blocks.
 Metrics/BlockLength:
+  # Stop rubocop from complaining about large `describe` blocks.
   Exclude:
     - spec/**/*_spec.rb
-
-# Lower severity of complexity metrics.
-Metrics/AbcSize:
-  Severity: refactor
-Metrics/CyclomaticComplexity:
-  Severity: refactor
-Metrics/PerceivedComplexity:
-  Severity: refactor
-Metrics/MethodLength:
-  Severity: refactor

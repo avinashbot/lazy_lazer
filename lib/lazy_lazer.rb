@@ -1,7 +1,9 @@
 # frozen_string_literal: true
 
-require_relative 'lazy_lazer/version'
 require_relative 'lazy_lazer/errors'
+require_relative 'lazy_lazer/key_metadata'
+require_relative 'lazy_lazer/properties'
+require_relative 'lazy_lazer/version'
 
 # The LazyLazer root that's included
 module LazyLazer
@@ -11,22 +13,7 @@ module LazyLazer
   def self.included(base)
     base.extend(ClassMethods)
     base.include(InstanceMethods)
-    base.instance_variable_set(
-      :@lazer_metadata,
-      properties: [],
-      required: {},
-      default: {},
-      from: {},
-      with: {}
-    )
-  end
-
-  # Get the source key from an instance
-  # @param instance [Object] the instance
-  # @param key [Symbol] the property key
-  # @return [Symbol] the source key if found or the passed key if not found
-  def self.source_key(instance, key)
-    instance.class.lazer_metadata[:from].fetch(key, key)
+    base.instance_variable_set(:@lazer_metadata, {})
   end
 
   # The methods to extend the class with.
@@ -35,7 +22,7 @@ module LazyLazer
     # @param klass [Class] the subclass
     # @return [void]
     def inherited(klass)
-      klass.instance_variable_set(:@lazer_metadata, @lazer_metadata)
+      klass.instance_variable_set(:@lazer_metadata, @lazer_metadata.dup)
     end
 
     # @return [Hash<Symbol, Hash>] the lazer configuration for this model
@@ -45,19 +32,25 @@ module LazyLazer
 
     # Define a property.
     # @param name [Symbol] the name of the property method
+    # @option bool_options [Array<Symbol>] options that are set to true
     # @param options [Hash] the options to create the property with
     # @option options [Boolean] :required (false) whether existence of this property should be
     #   checked on model creation
+    # @option options [Boolean] :nil (false) shortcut for default: nil
     # @option options [Object, Proc] :default the default value to return if not provided
-    # @option options [Symbol] :from the key in the source object to get the property from
-    # @option options [Proc, Symbol] :with an optional transformation to apply to the value
-    # @note both :required and :default can't be provided
+    # @option options [Symbol] :from (name) the key in the source object to get the property from
+    # @option options [Proc, Symbol, nil] :with an optional transformation to apply to the value
     # @return [Symbol] the name of the created property
-    def property(name, **options)
-      raise 'both :required and :default cannot be given' if options[:required] && options[:default]
+    def property(name, *bool_options, **options)
+      bool_options.each_with_object(options) { |sym, hsh| hsh[sym] = true }
       sym_name = name.to_sym
-      @lazer_metadata[:properties] << sym_name
-      options.each_pair { |option, value| @lazer_metadata[option][sym_name] = value }
+      @lazer_metadata[sym_name] = KeyMetadata.new(
+        source_key: options.fetch(:from, sym_name),
+        required: !!options[:required],
+        runtime_required: !options.key?(:default) && !options[:nil],
+        transform: options[:with],
+        default: options[:default]
+      )
       define_method(sym_name) { read_attribute(sym_name) }
     end
   end
@@ -69,9 +62,9 @@ module LazyLazer
     # @return [void]
     def initialize(attributes = {})
       # Check that all required attributes exist.
-      self.class.lazer_metadata[:required].keys.each do |property|
-        key = LazyLazer.source_key(self, property)
-        raise RequiredAttribute, "#{self} requires `#{key}`" unless attributes.key?(key)
+      self.class.lazer_metadata.each do |key, key_metadata|
+        next if !key_metadata.required? || attributes.key?(key_metadata.source_key)
+        raise RequiredAttribute, "#{self} requires `#{key}`"
       end
 
       @_lazer_source = attributes.dup
@@ -83,7 +76,7 @@ module LazyLazer
     # @return [Hash] a hash representation of the model
     def to_h(strict = true)
       if strict
-        todo = self.class.lazer_metadata[:properties] - @_lazer_cache.keys
+        todo = self.class.lazer_metadata.keys - @_lazer_cache.keys
         todo.each { |k| read_attribute(k) }
       end
       @_lazer_cache
@@ -92,7 +85,7 @@ module LazyLazer
     # @abstract Provides reloading behaviour for lazy loading.
     # @return [Hash] the result of reloading the hash
     def lazer_reload
-      self.fully_loaded = true
+      fully_loaded!
       {}
     end
 
@@ -110,42 +103,28 @@ module LazyLazer
     # @param name [Symbol] the attribute name
     # @raise MissingAttribute if the key was not found
     def read_attribute(name)
-      # Returns the cached attribute.
-      return @_lazer_cache[name] if @_lazer_cache.key?(name)
+      # Lookup cache first.
+      key = name.to_sym
+      return @_lazer_cache[key] if @_lazer_cache.key?(key)
 
-      # Converts the property into the lookup key.
-      source_key = LazyLazer.source_key(self, name)
+      # Check if the property is defined.
+      key_metadata = self.class.lazer_metadata[key]
+      raise MissingAttribute, "`#{key}` isn't defined for #{self}" if key_metadata.nil?
 
-      # Reloads if a key that should be there isn't.
-      reload if !@_lazer_source.key?(source_key) &&
-                self.class.lazer_metadata[:properties].include?(name) &&
-                !fully_loaded?
-
-      # Complains if even after reloading, the key is missing (and there's no default).
-      if !@_lazer_source.key?(source_key) && !self.class.lazer_metadata[:default].key?(name)
-        raise MissingAttribute, "`#{source_key}` missing for #{self}"
+      # Reload the model if necessary.
+      source_key = key_metadata.source_key
+      reload if !@_lazer_source.key?(source_key) && !fully_loaded?
+      if !@_lazer_source.key?(source_key) && key_metadata.runtime_required?
+        raise MissingAttribute, "`#{source_key} is missing for #{self}`"
       end
 
-      # Gets the value or gets the default.
-      value_or_default = @_lazer_source.fetch(source_key) do
-        default = self.class.lazer_metadata[:default][name]
-        default.is_a?(Proc) ? instance_exec(&default) : default
-      end
-
-      # Transforms the result using :with, if found.
-      transformer = self.class.lazer_metadata[:with][name]
-      coerced =
-        case transformer
-        when Symbol
-          value_or_default.public_send(transformer)
-        when Proc
-          instance_exec(value_or_default, &transformer)
-        else
-          value_or_default
-        end
+      # Process the value.
+      raw_value = @_lazer_source.fetch(source_key) { key_metadata.fetch_default(self) }
+      value = key_metadata.transform_value(raw_value, self)
 
       # Add to cache and return the result.
-      @_lazer_cache[name] = coerced
+      @_lazer_cache[key] = value
+      value
     end
 
     # Return the value of the attribute, returning nil if not found
@@ -177,9 +156,8 @@ module LazyLazer
 
     private
 
-    # @param state [Boolean] the new state
-    def fully_loaded=(state)
-      @_lazer_fully_loaded = state
+    def fully_loaded!
+      @_lazer_fully_loaded = true
     end
   end
 end
