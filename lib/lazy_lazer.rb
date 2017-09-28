@@ -5,7 +5,7 @@ require_relative 'lazy_lazer/internal_model'
 require_relative 'lazy_lazer/key_metadata'
 require_relative 'lazy_lazer/version'
 
-# The LazyLazer root that's included
+# The LazyLazer root that's included.
 module LazyLazer
   # Hook into `include LazyLazer`.
   # @param base [Module] the object to include the methods in
@@ -41,6 +41,16 @@ module LazyLazer
     # @option options [Symbol] :from (name) the key in the source object to get the property from
     # @option options [Proc, Symbol, nil] :with an optional transformation to apply to the value
     # @return [Symbol] the name of the created property
+    #
+    # @example
+    #   class MyModel
+    #     include LazyLazer
+    #
+    #     property :id, :required
+    #     property :timestamp, with: ->(i) { Time.at(i) }
+    #     property :created_at, default: ->() { Time.now }
+    #     property :camel_case, from: :camelCase
+    #  end
     def property(name, *bool_options, **options)
       bool_options.each_with_object(options) { |sym, hsh| hsh[sym] = true }
       sym_name = name.to_sym
@@ -60,6 +70,7 @@ module LazyLazer
     # Create a new instance of the class from a set of source attributes.
     # @param attributes [Hash] the model attributes
     # @return [void]
+    # @raise RequiredAttribute if an attribute marked as required wasn't found
     def initialize(attributes = {})
       @_lazer_model = InternalModel.new(self.class.lazer_metadata, self)
       @_lazer_model.merge!(attributes)
@@ -91,33 +102,38 @@ module LazyLazer
     end
 
     # Return the value of the attribute.
-    # @param name [Symbol] the attribute name
+    # @param key_name [Symbol] the attribute name
+    # @return [Object] the returned value
     # @raise MissingAttribute if the key was not found
-    def read_attribute(name)
-      key = name.to_sym
-      return @_lazer_writethrough[key] if @_lazer_writethrough.key?(key)
-      @_lazer_model.fetch(key)
+    def read_attribute(key_name)
+      symbol_key = key_name.to_sym
+      return @_lazer_writethrough[symbol_key] if @_lazer_writethrough.key?(symbol_key)
+      @_lazer_model.fetch(symbol_key)
     end
 
-    # Return the value of the attribute, returning nil if not found
-    # @param name [Symbol] the attribute name
-    def [](name)
-      read_attribute(name)
+    # Return the value of the attribute, returning nil if not found.
+    # @param key_name [Symbol] the attribute name
+    # @return [Object] the returned value
+    def [](key_name)
+      read_attribute(key_name)
     rescue MissingAttribute
       nil
     end
 
     # Update an attribute.
-    # @param attribute [Symbol] the attribute to update
+    # @param key_name [Symbol] the attribute to update
     # @param value [Object] the new value
-    def write_attribute(attribute, value)
-      @_lazer_writethrough[attribute] = value
+    # @return [Object] the written value
+    def write_attribute(key_name, value)
+      @_lazer_writethrough[key_name] = value
     end
 
     # Update multiple attributes at once.
     # @param new_attributes [Hash<Symbol, Object>] the new attributes
+    # @return [self] the updated object
     def assign_attributes(new_attributes)
       new_attributes.each { |key, value| write_attribute(key, value) }
+      self
     end
     alias attributes= assign_attributes
 
@@ -128,6 +144,8 @@ module LazyLazer
 
     private
 
+    # Mark the model as fully loaded.
+    # @return [void]
     def fully_loaded!
       @_lazer_loaded = true
     end
