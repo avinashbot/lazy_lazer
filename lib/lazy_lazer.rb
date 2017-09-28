@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'lazy_lazer/errors'
+require_relative 'lazy_lazer/internal_model'
 require_relative 'lazy_lazer/key_metadata'
 require_relative 'lazy_lazer/properties'
 require_relative 'lazy_lazer/version'
@@ -61,25 +62,19 @@ module LazyLazer
     # @param attributes [Hash] the model attributes
     # @return [void]
     def initialize(attributes = {})
-      # Check that all required attributes exist.
-      self.class.lazer_metadata.each do |key, key_metadata|
-        next if !key_metadata.required? || attributes.key?(key_metadata.source_key)
-        raise RequiredAttribute, "#{self} requires `#{key}`"
-      end
-
-      @_lazer_source = attributes.dup
+      @_lazer_model = InternalModel.new(self.class.lazer_metadata, self)
+      @_lazer_model.source_hash.merge!(attributes)
+      @_lazer_model.verify_required!
       @_lazer_cache = {}
+      @_lazer_writethrough = {}
     end
 
     # Converts all the attributes that haven't been converted yet and returns the final hash.
-    # @param strict [Boolean] whether to fully load all attributes
     # @return [Hash] a hash representation of the model
-    def to_h(strict = true)
-      if strict
-        todo = self.class.lazer_metadata.keys - @_lazer_cache.keys
-        todo.each { |k| read_attribute(k) }
-      end
-      @_lazer_cache
+    def to_h
+      todo = self.class.lazer_metadata.keys - @_lazer_cache.keys
+      todo.each { |key| @_lazer_cache[key] = @_lazer_model.load_key(key) }
+      @_lazer_cache.merge(@_lazer_writethrough)
     end
 
     # @abstract Provides reloading behaviour for lazy loading.
@@ -94,8 +89,8 @@ module LazyLazer
     # @return [self] the updated object
     def reload
       new_attributes = lazer_reload
-      @_lazer_source.merge!(new_attributes)
-      @_lazer_cache = {}
+      @_lazer_model.source_hash.merge!(new_attributes)
+      @_lazer_cache.clear
       self
     end
 
@@ -103,26 +98,10 @@ module LazyLazer
     # @param name [Symbol] the attribute name
     # @raise MissingAttribute if the key was not found
     def read_attribute(name)
-      # Lookup cache first.
       key = name.to_sym
+      return @_lazer_writethrough[key] if @_lazer_writethrough.key?(key)
       return @_lazer_cache[key] if @_lazer_cache.key?(key)
-
-      # Check if the property is defined.
-      key_metadata = self.class.lazer_metadata[key]
-      raise MissingAttribute, "`#{key}` isn't defined for #{self}" if key_metadata.nil?
-
-      # Reload the model if necessary.
-      source_key = key_metadata.source_key
-      reload if !@_lazer_source.key?(source_key) && !fully_loaded?
-      if !@_lazer_source.key?(source_key) && key_metadata.runtime_required?
-        raise MissingAttribute, "`#{source_key} is missing for #{self}`"
-      end
-
-      # Process the value.
-      raw_value = @_lazer_source.fetch(source_key) { key_metadata.fetch_default(self) }
-      value = key_metadata.transform_value(raw_value, self)
-
-      # Add to cache and return the result.
+      value = @_lazer_model.load_key(key)
       @_lazer_cache[key] = value
       value
     end
@@ -139,7 +118,7 @@ module LazyLazer
     # @param attribute [Symbol] the attribute to update
     # @param value [Object] the new value
     def write_attribute(attribute, value)
-      @_lazer_cache[attribute] = value
+      @_lazer_writethrough[attribute] = value
     end
 
     # Update multiple attributes at once.
@@ -151,13 +130,13 @@ module LazyLazer
 
     # @return [Boolean] whether the object is done with lazy loading
     def fully_loaded?
-      @_lazer_fully_loaded ||= false
+      @_lazer_loaded ||= false
     end
 
     private
 
     def fully_loaded!
-      @_lazer_fully_loaded = true
+      @_lazer_loaded = true
     end
   end
 end

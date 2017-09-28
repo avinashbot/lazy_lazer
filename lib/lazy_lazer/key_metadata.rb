@@ -25,21 +25,5 @@ module LazyLazer
     def runtime_required?
       @runtime_required
     end
-
-    def transform_value(value, context)
-      case @transform
-      when nil
-        value
-      when Proc
-        context.instance_exec(value, &@transform)
-      when Symbol
-        value.public_send(@transform)
-      end
-    end
-
-    def fetch_default(context)
-      return context.instance_exec(&@default) if @default.is_a?(Proc)
-      @default
-    end
   end
 end

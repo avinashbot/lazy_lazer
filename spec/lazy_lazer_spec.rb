@@ -167,22 +167,11 @@ RSpec.describe LazyLazer do
       expect(model_class.new(hello: 'world').to_h).to be_a(Hash)
     end
 
-    context 'when :strict is true' do
-      it 'coerces uncoerced attributes' do
-        called = false
-        model_class.property(:hello, with: ->(_) { called = true })
-        model_class.new(hello: 1).to_h
-        expect(called).to be(true)
-      end
-    end
-
-    context 'when :strict is false' do
-      it 'skips uncoerced attributes' do
-        called = false
-        model_class.property(:hello, with: ->(_) { called = true })
-        model_class.new(hello: 1).to_h(false)
-        expect(called).to be(false)
-      end
+    it 'coerces uncoerced attributes' do
+      called = false
+      model_class.property(:hello, with: ->(_) { called = true })
+      model_class.new(hello: 1).to_h
+      expect(called).to be(true)
     end
   end
 
