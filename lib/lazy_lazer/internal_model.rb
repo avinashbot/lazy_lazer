@@ -36,7 +36,6 @@ module LazyLazer
     # @raise MissingAttribute if the attribute wasn't found and there isn't a default
     def fetch(key_name)
       @cache_hash[key_name] ||= load_key_from_source(key_name)
-      @cache_hash[key_name]
     end
 
     # Merge a hash into the model.
@@ -55,20 +54,30 @@ module LazyLazer
     # @return [Object] the returned value
     # @raise MissingAttribute if the attribute wasn't found and there isn't a default
     def load_key_from_source(key_name)
-      # Check if the property is defined.
-      meta = @key_metadata.fetch(key_name) do
-        raise MissingAttribute, "`#{key_name}` isn't defined for #{@parent}"
-      end
-
-      # Reload the model if necessary.
-      @parent.reload if !@source_hash.key?(meta.source_key) && !@parent.fully_loaded?
-      if !@source_hash.key?(meta.source_key) && meta.runtime_required?
-        raise MissingAttribute, "`#{meta.source_key} is missing for #{@parent}`"
-      end
-
-      # Process the value.
+      meta = ensure_metadata_exists(key_name)
+      ensure_key_is_loaded(meta.source_key, meta.runtime_required?)
       raw_value = @source_hash.fetch(meta.source_key) { fetch_default(meta.default) }
       transform_value(raw_value, meta.transform)
+    end
+
+    # Ensure the metadata is found.
+    # @param key_name [Symbol] the property name
+    # @return [KeyMetadata] the key metadata, if found
+    # @raise MissingAttribute if the key metadata wasn't found
+    def ensure_metadata_exists(key_name)
+      return @key_metadata[key_name] if @key_metadata.key?(key_name)
+      raise MissingAttribute, "`#{key_name}` isn't defined for #{@parent}"
+    end
+
+    # Reloads the model if a key isn't loaded and possibly errors if the key still isn't there.
+    # @param source_key [Symbol] the key that should be loaded
+    # @param runtime_required [Boolean] whether to raise an error if the key is not loaded
+    # @return [void]
+    # @raise MissingAttribute if runtime_required is true and the key can't be loaded.
+    def ensure_key_is_loaded(source_key, runtime_required)
+      @parent.reload if !@source_hash.key?(source_key) && !@parent.fully_loaded?
+      return if @source_hash.key?(source_key) || !runtime_required
+      raise MissingAttribute, "`#{source_key} is missing for #{@parent}`"
     end
 
     # Apply a transformation to a value.

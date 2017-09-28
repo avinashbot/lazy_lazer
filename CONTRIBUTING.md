@@ -16,8 +16,7 @@ hi there thanks for contributing to lazy_lazer
 
 **tests**
 
-- lazy_lazer is maximum test-driven development
-- there are ~110 lines of source code and ~230 lines of tests
+- lazy_lazer is test-driven (just for external classes tho)
 - consider running `./bin/guard` during development
 - run `rake` and make sure that it passes
 

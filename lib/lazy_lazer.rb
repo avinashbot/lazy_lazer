@@ -56,15 +56,8 @@ module LazyLazer
     #     property :camel_case, from: :camelCase
     #   end
     def property(name, *bool_options, **options)
-      bool_options.each_with_object(options) { |sym, hsh| hsh[sym] = true }
       sym_name = name.to_sym
-      @lazer_metadata[sym_name] = KeyMetadata.new(
-        source_key: options.fetch(:from, sym_name),
-        required: !!options[:required],
-        runtime_required: !options.key?(:default) && !options[:nil],
-        transform: options[:with],
-        default: options[:default]
-      )
+      @lazer_metadata[sym_name] = KeyMetadata.from_options(sym_name, *bool_options, **options)
       define_method(sym_name) { read_attribute(sym_name) }
     end
   end

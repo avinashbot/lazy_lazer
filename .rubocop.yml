@@ -1,14 +1,14 @@
-inherit_from:
-  - http://relaxed.ruby.style/rubocop.yml
+# Rubocop configuration based on the Relaxed Ruby Style (with some changes).
 
 AllCops:
   TargetRubyVersion: 2.4
+
+Style/DoubleNegation:
+  Enabled: false
+
 Metrics/LineLength:
   Max: 100
-Style/NumericPredicate:
-  # Dumb, but also brand new.
-  Enabled: false
+
 Metrics/BlockLength:
-  # Stop rubocop from complaining about large `describe` blocks.
   Exclude:
-    - spec/**/*_spec.rb
+    - 'spec/**/*_spec.rb'
