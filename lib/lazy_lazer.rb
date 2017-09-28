@@ -5,7 +5,11 @@ require_relative 'lazy_lazer/internal_model'
 require_relative 'lazy_lazer/key_metadata'
 require_relative 'lazy_lazer/version'
 
-# The LazyLazer root that's included.
+# LazyLazer.
+# Include this module into your class to infuse it with lazer powers.
+#
+# @see LazyLazer::ClassMethods your model's class methods
+# @see LazyLazer::InstanceMethods your model's instance methods
 module LazyLazer
   # Hook into `include LazyLazer`.
   # @param base [Module] the object to include the methods in
@@ -32,7 +36,7 @@ module LazyLazer
 
     # Define a property.
     # @param name [Symbol] the name of the property method
-    # @option bool_options [Array<Symbol>] options that are set to true
+    # @param bool_options [Array<Symbol>] options that are set to true
     # @param options [Hash] the options to create the property with
     # @option options [Boolean] :required (false) whether existence of this property should be
     #   checked on model creation
@@ -50,7 +54,7 @@ module LazyLazer
     #     property :timestamp, with: ->(i) { Time.at(i) }
     #     property :created_at, default: ->() { Time.now }
     #     property :camel_case, from: :camelCase
-    #  end
+    #   end
     def property(name, *bool_options, **options)
       bool_options.each_with_object(options) { |sym, hsh| hsh[sym] = true }
       sym_name = name.to_sym
