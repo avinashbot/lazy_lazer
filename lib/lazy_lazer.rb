@@ -62,18 +62,16 @@ module LazyLazer
     # @return [void]
     def initialize(attributes = {})
       @_lazer_model = InternalModel.new(self.class.lazer_metadata, self)
-      @_lazer_model.source_hash.merge!(attributes)
+      @_lazer_model.merge!(attributes)
       @_lazer_model.verify_required!
-      @_lazer_cache = {}
       @_lazer_writethrough = {}
+      @_lazer_loaded = false
     end
 
     # Converts all the attributes that haven't been converted yet and returns the final hash.
     # @return [Hash] a hash representation of the model
     def to_h
-      todo = self.class.lazer_metadata.keys - @_lazer_cache.keys
-      todo.each { |key| @_lazer_cache[key] = @_lazer_model.load_key(key) }
-      @_lazer_cache.merge(@_lazer_writethrough)
+      @_lazer_model.to_h
     end
 
     # @abstract Provides reloading behaviour for lazy loading.
@@ -88,8 +86,7 @@ module LazyLazer
     # @return [self] the updated object
     def reload
       new_attributes = lazer_reload
-      @_lazer_model.source_hash.merge!(new_attributes)
-      @_lazer_cache.clear
+      @_lazer_model.merge!(new_attributes)
       self
     end
 
@@ -99,10 +96,7 @@ module LazyLazer
     def read_attribute(name)
       key = name.to_sym
       return @_lazer_writethrough[key] if @_lazer_writethrough.key?(key)
-      return @_lazer_cache[key] if @_lazer_cache.key?(key)
-      value = @_lazer_model.load_key(key)
-      @_lazer_cache[key] = value
-      value
+      @_lazer_model.fetch(key)
     end
 
     # Return the value of the attribute, returning nil if not found
@@ -129,7 +123,7 @@ module LazyLazer
 
     # @return [Boolean] whether the object is done with lazy loading
     def fully_loaded?
-      @_lazer_loaded ||= false
+      @_lazer_loaded
     end
 
     private

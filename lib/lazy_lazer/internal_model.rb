@@ -3,12 +3,11 @@
 module LazyLazer
   # A delegator for internal operations.
   class InternalModel
-    attr_reader :source_hash
-
     def initialize(key_metadata, parent)
       @key_metadata = key_metadata
       @parent = parent
       @source_hash = {}
+      @cache_hash = {}
     end
 
     def verify_required!
@@ -18,7 +17,24 @@ module LazyLazer
       end
     end
 
-    def load_key(key_name)
+    def to_h
+      todo = @key_metadata.keys - @cache_hash.keys
+      todo.each_with_object(@cache_hash) { |key, cache| cache[key] = load_key_from_source(key) }
+    end
+
+    def fetch(key_name)
+      @cache_hash[key_name] ||= load_key_from_source(key_name)
+      @cache_hash[key_name]
+    end
+
+    def merge!(attributes)
+      @cache_hash.clear
+      @source_hash.merge!(attributes)
+    end
+
+    private
+
+    def load_key_from_source(key_name)
       # Check if the property is defined.
       meta = @key_metadata.fetch(key_name) do
         raise MissingAttribute, "`#{key_name}` isn't defined for #{@parent}"
@@ -34,8 +50,6 @@ module LazyLazer
       raw_value = @source_hash.fetch(meta.source_key) { fetch_default(meta.default) }
       transform_value(raw_value, meta.transform)
     end
-
-    private
 
     def transform_value(value, transform)
       case transform
