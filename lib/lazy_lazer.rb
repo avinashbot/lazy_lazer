@@ -3,7 +3,6 @@
 require_relative 'lazy_lazer/errors'
 require_relative 'lazy_lazer/internal_model'
 require_relative 'lazy_lazer/key_metadata'
-require_relative 'lazy_lazer/properties'
 require_relative 'lazy_lazer/version'
 
 # The LazyLazer root that's included
