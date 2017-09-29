@@ -1,14 +1,16 @@
 # Rubocop configuration based on the Relaxed Ruby Style (with some changes).
-
 AllCops:
   TargetRubyVersion: 2.4
 
+# I just want to convert stuff to boolean.
 Style/DoubleNegation:
   Enabled: false
 
+# Widescreen monitors are now a thing.
 Metrics/LineLength:
   Max: 100
 
+# Allow long describe blocks.
 Metrics/BlockLength:
   Exclude:
     - 'spec/**/*_spec.rb'
