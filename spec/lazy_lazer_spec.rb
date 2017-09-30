@@ -236,4 +236,13 @@ RSpec.describe LazyLazer do
       expect(model.fully_loaded?).to eq(true)
     end
   end
+
+  describe '#not_fully_loaded!' do
+    it 'updates the result of #fully_loaded?' do
+      model = model_class.new
+      model.send(:fully_loaded!)
+      model.send(:not_fully_loaded!)
+      expect(model.fully_loaded?).to eq(false)
+    end
+  end
 end

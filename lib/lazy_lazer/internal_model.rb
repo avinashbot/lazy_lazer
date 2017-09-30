@@ -25,9 +25,14 @@ module LazyLazer
 
     # Converts all unconverted keys and packages them as a hash.
     # @return [Hash] the converted hash
-    def to_h
+    def parent_to_h
       todo = @key_metadata.keys - @cache_hash.keys
       todo.each_with_object(@cache_hash) { |key, cache| cache[key] = load_key_from_source(key) }.dup
+    end
+
+    # @return [Array<Symbol>] the locally processed and cached keys
+    def cached_keys
+      @cache_hash.keys
     end
 
     # Get the value of a key (fetching it from the cache if possible)

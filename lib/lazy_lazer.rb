@@ -79,7 +79,13 @@ module LazyLazer
     # Converts all the attributes that haven't been converted yet and returns the final hash.
     # @return [Hash] a hash representation of the model
     def to_h
-      @_lazer_model.to_h
+      @_lazer_model.parent_to_h
+    end
+
+    # @return [String] a human-friendly view of the model
+    def inspect
+      "#<#{self.class.name} (#{fully_loaded? ? 'loaded' : 'unloaded'}): [" + \
+        (@_lazer_model.cached_keys + @_lazer_writethrough.keys).join(', ') + ']>'
     end
 
     # Reload the object. Calls {#lazer_reload}, then merges the results into the internal store.
@@ -145,6 +151,12 @@ module LazyLazer
     # @return [void]
     def fully_loaded!
       @_lazer_loaded = true
+    end
+
+    # Mark the model as not fully loaded.
+    # @return [void]
+    def not_fully_loaded!
+      @_lazer_loaded = false
     end
   end
 end
