@@ -16,7 +16,7 @@ class User
   property :favorite_ice_cream
 
   def lazer_reload
-    self.fully_loaded = true # mark model as fully updated
+    fully_loaded! # mark model as fully updated
     { favorite_ice_cream: %w[vanilla strawberry chocolate].sample }
   end
 end
