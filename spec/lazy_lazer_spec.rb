@@ -20,6 +20,32 @@ RSpec.describe LazyLazer do
     end
   end
 
+  describe '.inherited' do
+    it 'copies the source keys' do
+      parent_class = Class.new(model_class)
+      parent_class.property(:foo)
+      child_class = Class.new(parent_class)
+      child = child_class.new(foo: :bar)
+      expect(child.foo).to eq(:bar)
+    end
+
+    it "doesn't modify the parent store" do
+      parent_class = Class.new(model_class)
+      parent_class.property(:foo)
+      child_class = Class.new(parent_class)
+      child_class.property(:bar)
+      expect(parent_class.new).not_to respond_to(:bar)
+    end
+
+    it 'allows redefining keys and their properties' do
+      parent_class = Class.new(model_class)
+      parent_class.property(:foo, :required)
+      child_class = Class.new(parent_class)
+      child_class.property(:foo)
+      expect { child_class.new(bar: 1) }.not_to raise_error
+    end
+  end
+
   describe '#initialize' do
     it "sets the model's attributes" do
       model_class.property(:hello)
