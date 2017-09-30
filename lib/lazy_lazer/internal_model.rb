@@ -4,7 +4,7 @@ module LazyLazer
   # A delegator for internal operations.
   class InternalModel
     # Create an internal model with a reference to a public model.
-    # @param key_metadata [Hash<Symbol, KeyMetadata>] a reference to a property hash
+    # @param key_metadata [KeyMetadataStore] a reference to a metadata store
     # @param parent [LazyLazer] a reference to a LazyLazer model
     def initialize(key_metadata, parent)
       @key_metadata = key_metadata
@@ -17,10 +17,15 @@ module LazyLazer
     # @raise RequiredAttribute if a required attribute is missing
     # @return [void]
     def verify_required!
-      @key_metadata.each do |key_name, meta|
-        next if !meta.required? || @source_hash.key?(meta.source_key)
+      @key_metadata.required_properties.each do |key_name|
+        next if @source_hash.key?(@key_metadata.get(key_name).source_key)
         raise RequiredAttribute, "#{@parent} requires `#{key_name}`"
       end
+    end
+
+    # @return [Array] the identity properties
+    def identity_properties
+      @key_metadata.identity_properties
     end
 
     # Converts all unconverted keys and packages them as a hash.
@@ -70,7 +75,7 @@ module LazyLazer
     # @return [KeyMetadata] the key metadata, if found
     # @raise MissingAttribute if the key metadata wasn't found
     def ensure_metadata_exists(key_name)
-      return @key_metadata[key_name] if @key_metadata.key?(key_name)
+      return @key_metadata.get(key_name) if @key_metadata.contains?(key_name)
       raise MissingAttribute, "`#{key_name}` isn't defined for #{@parent}"
     end
 

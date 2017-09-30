@@ -2,6 +2,7 @@
 
 require_relative 'lazy_lazer/errors'
 require_relative 'lazy_lazer/internal_model'
+require_relative 'lazy_lazer/key_metadata_store'
 require_relative 'lazy_lazer/key_metadata'
 require_relative 'lazy_lazer/version'
 
@@ -17,7 +18,7 @@ module LazyLazer
   def self.included(base)
     base.extend(ClassMethods)
     base.include(InstanceMethods)
-    base.instance_variable_set(:@lazer_metadata, {})
+    base.instance_variable_set(:@_lazer_metadata, KeyMetadataStore.new)
   end
 
   # The methods to extend the class with.
@@ -26,12 +27,7 @@ module LazyLazer
     # @param klass [Class] the subclass
     # @return [void]
     def inherited(klass)
-      klass.instance_variable_set(:@lazer_metadata, @lazer_metadata.dup)
-    end
-
-    # @return [Hash<Symbol, Hash>] the lazer configuration for this model
-    def lazer_metadata
-      @lazer_metadata
+      klass.instance_variable_set(:@_lazer_metadata, @_lazer_metadata.dup)
     end
 
     # Define a property.
@@ -40,6 +36,7 @@ module LazyLazer
     # @param options [Hash] the options to create the property with
     # @option options [Boolean] :required (false) whether existence of this property should be
     #   checked on model creation
+    # @option options [Boolean] :identity (false) use this key for equality comparisions
     # @option options [Boolean] :nil (false) shortcut for default: nil
     # @option options [Object, Proc] :default the default value to return if not provided
     # @option options [Symbol] :from (name) the key in the source object to get the property from
@@ -57,7 +54,7 @@ module LazyLazer
     #   end
     def property(name, *bool_options, **options)
       sym_name = name.to_sym
-      @lazer_metadata[sym_name] = KeyMetadata.from_options(sym_name, *bool_options, **options)
+      @_lazer_metadata.add(sym_name, KeyMetadata.new(sym_name, *bool_options, **options))
       define_method(sym_name) { read_attribute(sym_name) }
     end
   end
@@ -69,11 +66,23 @@ module LazyLazer
     # @return [void]
     # @raise RequiredAttribute if an attribute marked as required wasn't found
     def initialize(attributes = {})
-      @_lazer_model = InternalModel.new(self.class.lazer_metadata, self)
+      @_lazer_model = InternalModel.new(self.class.instance_variable_get(:@_lazer_metadata), self)
       @_lazer_model.merge!(attributes)
       @_lazer_model.verify_required!
       @_lazer_writethrough = {}
       @_lazer_loaded = false
+    end
+
+    # Equality check.
+    # @param other [Object] the other object
+    # @return [Boolean]
+    def ==(other)
+      return false if self.class != other.class
+      return super if @_lazer_model.identity_properties.empty?
+      @_lazer_model.identity_properties.each do |key_name|
+        return false if self[key_name] != other[key_name]
+      end
+      true
     end
 
     # Converts all the attributes that haven't been converted yet and returns the final hash.
