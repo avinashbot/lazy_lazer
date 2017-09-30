@@ -8,7 +8,7 @@ require 'lazy_lazer'
 class User
   include LazyLazer
 
-  property :id, :required
+  property :id, :identity, :required
   property :email, default: 'unknown@example.com'
   property :created_at, from: :creation_time_utc, with: ->(t) { Time.at(t) }
   property :age, with: :to_i
