@@ -24,8 +24,8 @@ module LazyLazer
     end
 
     # @return [Array] the identity properties
-    def identity_properties
-      @key_metadata.identity_properties
+    def required_properties
+      @key_metadata.required_properties
     end
 
     # Converts all unconverted keys and packages them as a hash.

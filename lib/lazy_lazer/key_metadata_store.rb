@@ -6,13 +6,9 @@ module LazyLazer
     # @return [Array<Symbol>] the required properties
     attr_reader :required_properties
 
-    # @return [Array<Symbol>] the identity properties
-    attr_reader :identity_properties
-
     def initialize
       @collection = {}
       @required_properties = []
-      @identity_properties = []
     end
 
     # Add a KeyMetadata to the store.
@@ -22,7 +18,6 @@ module LazyLazer
     def add(key, meta)
       @collection[key] = meta
       @required_properties << key if meta.required?
-      @identity_properties << key if meta.identity?
       meta
     end
 

@@ -36,7 +36,6 @@ module LazyLazer
     # @param options [Hash] the options to create the property with
     # @option options [Boolean] :required (false) whether existence of this property should be
     #   checked on model creation
-    # @option options [Boolean] :identity (false) use this key for equality comparisions
     # @option options [Boolean] :nil (false) shortcut for default: nil
     # @option options [Object, Proc] :default the default value to return if not provided
     # @option options [Symbol] :from (name) the key in the source object to get the property from
@@ -73,13 +72,13 @@ module LazyLazer
       @_lazer_loaded = false
     end
 
-    # Equality check.
+    # Equality check, performed using required keys.
     # @param other [Object] the other object
     # @return [Boolean]
     def ==(other)
       return false if self.class != other.class
-      return super if @_lazer_model.identity_properties.empty?
-      @_lazer_model.identity_properties.each do |key_name|
+      return super if @_lazer_model.required_properties.empty?
+      @_lazer_model.required_properties.each do |key_name|
         return false if self[key_name] != other[key_name]
       end
       true

@@ -11,9 +11,6 @@ module LazyLazer
     # @return [Boolean] whether the key must exist when creating the model
     attr_accessor :required
 
-    # @return [Boolean] whether the key is used for equality comparision
-    attr_accessor :identity
-
     # @return [Boolean] whether the key must exist when loaded
     attr_accessor :runtime_required
 
@@ -29,7 +26,6 @@ module LazyLazer
       boolean_options.each_with_object(options) { |sym, hsh| hsh[sym] = true }
       self.source_key = options[:from] || key_name
       self.required = !!options[:required]
-      self.identity = !!options[:identity]
       self.runtime_required = !options.key?(:default) && !options[:nil]
       self.transform = options[:with]
       self.default = options[:default]
@@ -38,11 +34,6 @@ module LazyLazer
     # @return [Boolean] whether the key must exist when creating the model
     def required?
       @required
-    end
-
-    # @return [Boolean] whether the key is used for equality comparision
-    def identity?
-      @identity
     end
 
     # @return [Boolean] whether the key must exist when loaded

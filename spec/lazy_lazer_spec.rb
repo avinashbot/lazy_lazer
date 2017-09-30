@@ -31,13 +31,13 @@ RSpec.describe LazyLazer do
   describe '#==' do
     context 'when the other object is a different class' do
       it 'returns false' do
-        model_class.property(:hello, :identity)
+        model_class.property(:hello, :required)
         one = model_class.new(hello: 1)
         expect(one).not_to eq(10)
       end
     end
 
-    context 'when object has no identity properties' do
+    context 'when object has no required properties' do
       it 'falls back to super (i.e. memory addresses)' do
         model_class.property(:hello)
         model_class.property(:world)
@@ -47,9 +47,9 @@ RSpec.describe LazyLazer do
       end
     end
 
-    context 'when the other object has a different identity property' do
-      it 'calls #reload and returns the new attribute' do
-        model_class.property(:hello, :identity)
+    context 'when the other object has a non-equal required property' do
+      it 'returns false' do
+        model_class.property(:hello, :required)
         model_class.property(:world)
         one = model_class.new(hello: 1, world: 1)
         two = model_class.new(hello: 2, world: 1)
@@ -57,9 +57,9 @@ RSpec.describe LazyLazer do
       end
     end
 
-    context 'when the other object has the same identity properties' do
+    context 'when the other object has the same required properties' do
       it 'returns true' do
-        model_class.property(:hello, :identity)
+        model_class.property(:hello, :required)
         model_class.property(:world)
         one = model_class.new(hello: 1, world: 2)
         two = model_class.new(hello: 1, world: 3)
