@@ -12,7 +12,7 @@ module LazyLazer
     def initialize(key_metadata, parent)
       @key_metadata = key_metadata
       @parent = parent
-      @invalidated = {}
+      @invalidated = Set.new
       @source_hash = {}
       @cache_hash = {}
       @fully_loaded = false
@@ -50,7 +50,7 @@ module LazyLazer
     # @param key_name [Symbol] the key to invalidate
     # @return [void]
     def invalidate(key_name)
-      @invalidated[key_name] = true
+      @invalidated.add(key_name)
     end
 
     # Get the value of a key (fetching it from the cache if possible)
@@ -58,9 +58,9 @@ module LazyLazer
     # @return [Object] the returned value
     # @raise MissingAttribute if the attribute wasn't found and there isn't a default
     def read_attribute(key_name)
-      if @invalidated[key_name]
+      if @invalidated.include?(key_name)
         @parent.reload
-        @invalidated[key_name] = false
+        @invalidated.delete(key_name)
       end
       @cache_hash[key_name] ||= load_key_from_source(key_name)
     end
@@ -78,11 +78,9 @@ module LazyLazer
 
     # Merge a hash into the model.
     # @param attributes [Hash<Symbol, Object>] the attributes to merge
-    # @return [nil]
     def merge!(attributes)
       @cache_hash.clear
       @source_hash.merge!(attributes)
-      nil
     end
 
     private
