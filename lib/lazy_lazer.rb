@@ -68,8 +68,6 @@ module LazyLazer
       @_lazer_model = InternalModel.new(self.class.instance_variable_get(:@_lazer_metadata), self)
       @_lazer_model.merge!(attributes)
       @_lazer_model.verify_required!
-      @_lazer_writethrough = {}
-      @_lazer_loaded = false
     end
 
     # Equality check, performed using required keys.
@@ -92,8 +90,7 @@ module LazyLazer
 
     # @return [String] a human-friendly view of the model
     def inspect
-      "#<#{self.class.name} (#{fully_loaded? ? 'loaded' : 'unloaded'}): [" + \
-        (@_lazer_model.cached_keys + @_lazer_writethrough.keys).join(', ') + ']>'
+      @_lazer_model.parent_inspect
     end
 
     # Reload the object. Calls {#lazer_reload}, then merges the results into the internal store.
@@ -110,9 +107,7 @@ module LazyLazer
     # @return [Object] the returned value
     # @raise MissingAttribute if the key was not found
     def read_attribute(key_name)
-      symbol_key = key_name.to_sym
-      return @_lazer_writethrough[symbol_key] if @_lazer_writethrough.key?(symbol_key)
-      @_lazer_model.fetch(symbol_key)
+      @_lazer_model.read_attribute(key_name.to_sym)
     end
 
     # Return the value of the attribute, returning nil if not found.
@@ -126,10 +121,10 @@ module LazyLazer
 
     # Update an attribute.
     # @param key_name [Symbol] the attribute to update
-    # @param value [Object] the new value
+    # @param new_value [Object] the new value
     # @return [Object] the written value
-    def write_attribute(key_name, value)
-      @_lazer_writethrough[key_name] = value
+    def write_attribute(key_name, new_value)
+      @_lazer_model.write_attribute(key_name, new_value)
     end
 
     # Update multiple attributes at once.
@@ -143,7 +138,7 @@ module LazyLazer
 
     # @return [Boolean] whether the object is done with lazy loading
     def fully_loaded?
-      @_lazer_loaded
+      @_lazer_model.fully_loaded
     end
 
     private
@@ -155,16 +150,23 @@ module LazyLazer
       {}
     end
 
+    # Mark a key as tainted, forcing a reload on the next lookup.
+    # @param key_name [Symbol] the key to invalidate
+    # @return [void]
+    def invalidate(key_name)
+      @_lazer_model.invalidate(key_name)
+    end
+
     # Mark the model as fully loaded.
     # @return [void]
     def fully_loaded!
-      @_lazer_loaded = true
+      @_lazer_model.fully_loaded = true
     end
 
     # Mark the model as not fully loaded.
     # @return [void]
     def not_fully_loaded!
-      @_lazer_loaded = false
+      @_lazer_model.fully_loaded = false
     end
   end
 end

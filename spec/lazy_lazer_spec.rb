@@ -133,7 +133,7 @@ RSpec.describe LazyLazer do
         it 'raises a MissingAttribute error' do
           model_class.property(:hello)
           model = model_class.new
-          expect(model).to receive(:fully_loaded?).and_return(true)
+          model.send(:fully_loaded!)
           expect { model.read_attribute(:hello) }
             .to raise_error(LazyLazer::MissingAttribute, /hello/)
         end
@@ -293,6 +293,17 @@ RSpec.describe LazyLazer do
       expect(model).to receive(:write_attribute).with(:hello, 'new world')
       expect(model).to receive(:write_attribute).with(:foo, 'new bar')
       model.assign_attributes(hello: 'new world', foo: 'new bar')
+    end
+  end
+
+  describe '#invalidate' do
+    it 'forces a call to #lazer_reload on the next call' do
+      model_class.property(:hello)
+      model = model_class.new(hello: 'world')
+      expect(model).to receive(:lazer_reload)
+      model.hello
+      model.send(:invalidate, :hello)
+      model.hello
     end
   end
 
