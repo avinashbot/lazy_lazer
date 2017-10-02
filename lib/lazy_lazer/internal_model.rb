@@ -18,6 +18,7 @@ module LazyLazer
     # Converts all unconverted keys and packages them as a hash.
     # @return [Hash] the converted hash
     def to_h
+      return @cache_hash if fully_loaded?
       todo = @key_metadata.keys - @cache_hash.keys
       todo.each_with_object(@cache_hash) { |key, cache| cache[key] = load_key_from_source(key) }.dup
     end
@@ -32,8 +33,8 @@ module LazyLazer
     # @param key_name [Symbol] the key to check
     # @return [Boolean] whether the key exists locally.
     def exists_locally?(key_name)
-      ensure_metadata_exists(key_name)
-      @source_hash.key?(@key_metadata.get(key_name).source_key)
+      meta = ensure_metadata_exists(key_name)
+      @source_hash.key?(meta.source_key)
     end
 
     # Mark a key as tainted, forcing a reload on the next lookup.

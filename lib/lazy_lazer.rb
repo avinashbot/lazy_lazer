@@ -82,7 +82,7 @@ module LazyLazer
       return false if self.class != other.class
       return super if @_lazer_model.required_properties.empty?
       @_lazer_model.required_properties.each do |key_name|
-        return false if self[key_name] != other[key_name]
+        return false if read_attribute(key_name) != other.read_attribute(key_name)
       end
       true
     end
