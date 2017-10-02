@@ -92,8 +92,8 @@ module LazyLazer
     def load_key_from_source(key_name)
       meta = ensure_metadata_exists(key_name)
       ensure_key_is_loaded(meta.source_key, meta.runtime_required?)
-      raw_value = @source_hash.fetch(meta.source_key) { fetch_default(meta.default) }
-      transform_value(raw_value, meta.transform)
+      return fetch_default(meta.default) unless @source_hash.key?(meta.source_key)
+      transform_value(@source_hash[meta.source_key], meta.transform)
     end
 
     # Ensure the metadata is found.

@@ -189,9 +189,9 @@ RSpec.describe LazyLazer do
           expect(model_class.new(hello: 'world').hello).to eq('world')
         end
 
-        it 'applies :with transformation on the default value' do
+        it "doesn't apply :with transformation on the default value" do
           model_class.property(:hello, default: 'world', with: :upcase)
-          expect(model_class.new.hello).to eq('WORLD')
+          expect(model_class.new.hello).to eq('world')
         end
       end
     end
