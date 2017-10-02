@@ -11,7 +11,6 @@ module LazyLazer
     def initialize(key_metadata, parent)
       @key_metadata = key_metadata
       @parent = parent
-      @invalidated = Set.new
       @cache = {}
       @source = {}
       @writethrough = {}
@@ -43,19 +42,11 @@ module LazyLazer
       @source.key?(meta.source_key)
     end
 
-    # Mark a key as tainted, forcing a reload on the next lookup.
-    # @param key_name [Symbol] the key to invalidate
-    # @return [void]
-    def invalidate(key_name)
-      @invalidated.add(key_name)
-    end
-
     # Get the value of a key (fetching it from the cache if possible)
     # @param key_name [Symbol] the name of the key
     # @return [Object] the returned value
     # @raise MissingAttribute if the attribute wasn't found and there isn't a default
     def read_attribute(key_name)
-      @parent.reload if @invalidated.delete?(key_name)
       @cache.fetch(key_name) { load_key_strict(key_name) }
     end
 
