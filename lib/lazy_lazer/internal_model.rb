@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'set'
+
 module LazyLazer
   # A delegator for internal operations.
   class InternalModel
@@ -10,31 +12,35 @@ module LazyLazer
       @key_metadata = key_metadata
       @parent = parent
       @invalidated = Set.new
-      @source_hash = {}
-      @cache_hash = {}
+      @cache = {}
+      @source = {}
+      @writethrough = {}
       @fully_loaded = false
     end
 
     # Converts all unconverted keys and packages them as a hash.
     # @return [Hash] the converted hash
-    def to_h
-      return @cache_hash if fully_loaded?
-      todo = @key_metadata.keys - @cache_hash.keys
-      todo.each_with_object(@cache_hash) { |key, cache| cache[key] = load_key_from_source(key) }.dup
+    def to_h(strict: false)
+      todo = @key_metadata.keys - @cache.keys
+      todo.each do |key|
+        strict ? load_key_strict(key) : load_key_lenient(key)
+      end
+      @cache.dup
     end
 
     # @return [String] the string representation of the parent
     def inspect
       "#<#{@parent.class.name} (#{@fully_loaded ? 'loaded' : 'unloaded'}): [" + \
-        @cache_hash.keys.join(', ') + ']>'
+        @cache.keys.join(', ') + ']>'
     end
 
     # Whether the key doesn't need to be lazily loaded.
     # @param key_name [Symbol] the key to check
     # @return [Boolean] whether the key exists locally.
     def exists_locally?(key_name)
+      return true if @cache.key?(key_name) || @writethrough.key?(key_name)
       meta = ensure_metadata_exists(key_name)
-      @source_hash.key?(meta.source_key)
+      @source.key?(meta.source_key)
     end
 
     # Mark a key as tainted, forcing a reload on the next lookup.
@@ -49,12 +55,8 @@ module LazyLazer
     # @return [Object] the returned value
     # @raise MissingAttribute if the attribute wasn't found and there isn't a default
     def read_attribute(key_name)
-      key_name_sym = key_name.to_sym
-      if @invalidated.include?(key_name_sym)
-        @parent.reload
-        @invalidated.delete(key_name_sym)
-      end
-      @cache_hash[key_name_sym] ||= load_key_from_source(key_name_sym)
+      @parent.reload if @invalidated.delete?(key_name)
+      @cache.fetch(key_name) { load_key_strict(key_name) }
     end
 
     # Update an attribute.
@@ -62,10 +64,21 @@ module LazyLazer
     # @param new_value [Object] the new value
     # @return [Object] the written value
     def write_attribute(key_name, new_value)
-      unless @key_metadata.contains?(key_name)
-        raise ArgumentError, "#{key_name} is not a valid attribute for #{parent}"
-      end
-      @cache_hash[key_name] = new_value
+      meta = ensure_metadata_exists(key_name)
+      @source.delete(meta.source_key)
+      @writethrough[key_name] = @cache[key_name] = new_value
+    end
+
+    # Delete an attribute
+    # @param key_name [Symbol] the name of the key
+    # @return [void]
+    def delete_attribute(key_name)
+      key_name_sym = key_name.to_sym
+      meta = ensure_metadata_exists(key_name_sym)
+      @cache.delete(key_name)
+      @writethrough.delete(key_name)
+      @source.delete(meta.source_key)
+      nil
     end
 
     # Mark the model as fully loaded.
@@ -91,7 +104,7 @@ module LazyLazer
     # @return [void]
     def verify_required!
       @key_metadata.required_properties.each do |key_name|
-        next if @source_hash.key?(@key_metadata.get(key_name).source_key)
+        next if @source.key?(@key_metadata.get(key_name).source_key)
         raise RequiredAttribute, "#{@parent} requires `#{key_name}`"
       end
     end
@@ -106,8 +119,8 @@ module LazyLazer
     # @api private
     # @param attributes [Hash<Symbol, Object>] the attributes to merge
     def merge!(attributes)
-      @cache_hash.clear
-      @source_hash.merge!(attributes)
+      @cache.clear
+      @source.merge!(attributes)
     end
 
     private
@@ -116,11 +129,36 @@ module LazyLazer
     # @param key_name [Symbol] the key name
     # @return [Object] the returned value
     # @raise MissingAttribute if the attribute wasn't found and there isn't a default
-    def load_key_from_source(key_name)
+    def load_key_strict(key_name)
       meta = ensure_metadata_exists(key_name)
-      ensure_key_is_loaded(meta.source_key, meta.runtime_required?)
-      return fetch_default(meta.default) unless @source_hash.key?(meta.source_key)
-      transform_value(@source_hash[meta.source_key], meta.transform)
+      reload_if_missing(key_name, meta.source_key)
+      if !exists_locally?(key_name) && !meta.default_provided?
+        raise MissingAttribute, "`#{meta.source_key} is missing for #{@parent}`"
+      end
+      parse_key(meta, key_name)
+    end
+
+    # Load the key and apply transformations to it, skipping the cache.
+    # @param key_name [Symbol] the key name
+    # @return [Object] the returned value
+    def load_key_lenient(key_name)
+      meta = ensure_metadata_exists(key_name)
+      reload_if_missing(key_name, meta.source_key)
+      parse_key(meta, key_name)
+    end
+
+    def reload_if_missing(key_name, source_key)
+      @parent.reload if !@writethrough.key?(key_name) && !@source.key?(source_key) && !@fully_loaded
+    end
+
+    def parse_key(meta, key_name)
+      if @source.key?(meta.source_key)
+        @cache[key_name] = transform_value(@source[meta.source_key], meta.transform)
+      elsif @writethrough.key?(key_name)
+        @cache[key_name] = @writethrough[key_name]
+      elsif meta.default_provided?
+        @cache[key_name] = fetch_default(meta.default)
+      end
     end
 
     # Ensure the metadata is found.
@@ -130,17 +168,6 @@ module LazyLazer
     def ensure_metadata_exists(key_name)
       return @key_metadata.get(key_name) if @key_metadata.contains?(key_name)
       raise MissingAttribute, "`#{key_name}` isn't defined for #{@parent}"
-    end
-
-    # Reloads the model if a key isn't loaded and possibly errors if the key still isn't there.
-    # @param source_key [Symbol] the key that should be loaded
-    # @param runtime_required [Boolean] whether to raise an error if the key is not loaded
-    # @return [void]
-    # @raise MissingAttribute if runtime_required is true and the key can't be loaded.
-    def ensure_key_is_loaded(source_key, runtime_required)
-      @parent.reload if !@source_hash.key?(source_key) && !@fully_loaded
-      return if @source_hash.key?(source_key) || !runtime_required
-      raise MissingAttribute, "`#{source_key} is missing for #{@parent}`"
     end
 
     # Apply a transformation to a value.

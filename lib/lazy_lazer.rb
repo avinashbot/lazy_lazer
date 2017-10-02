@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'forwardable'
+
 require_relative 'lazy_lazer/errors'
 require_relative 'lazy_lazer/internal_model'
 require_relative 'lazy_lazer/key_metadata_store'
@@ -62,7 +64,9 @@ module LazyLazer
   module InstanceMethods
     extend Forwardable
 
-    def_delegators :@_lazer_model, :to_h, :inspect, :read_attribute, :write_attribute, :fully_loaded?, :fully_loaded!, :not_fully_loaded!, :invalidate, :exists_locally?
+    def_delegators :@_lazer_model,
+                   :to_h, :inspect, :read_attribute, :write_attribute, :delete_attribute,
+                   :fully_loaded?, :fully_loaded!, :not_fully_loaded!, :invalidate, :exists_locally?
     private :fully_loaded!, :not_fully_loaded!, :invalidate, :exists_locally?
 
     # Create a new instance of the class from a set of source attributes.

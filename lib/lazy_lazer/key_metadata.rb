@@ -11,8 +11,8 @@ module LazyLazer
     # @return [Boolean] whether the key must exist when creating the model
     attr_writer :required
 
-    # @return [Boolean] whether the key must exist when loaded
-    attr_writer :runtime_required
+    # @return [Boolean] whether a default was provided
+    attr_writer :default_provided
 
     # @return [Proc, Object] the default value or generator
     attr_accessor :default
@@ -26,7 +26,7 @@ module LazyLazer
       boolean_options.each_with_object(options) { |sym, hsh| hsh[sym] = true }
       self.source_key = options[:from] || key_name
       self.required = !!options[:required]
-      self.runtime_required = !options.key?(:default) && !options[:nil]
+      self.default_provided = options.key?(:default) || options[:nil]
       self.transform = options[:with]
       self.default = options[:default]
     end
@@ -36,9 +36,9 @@ module LazyLazer
       @required
     end
 
-    # @return [Boolean] whether the key must exist when loaded
-    def runtime_required?
-      @runtime_required
+    # @return [Boolean] whether no default was provided
+    def default_provided?
+      @default_provided
     end
   end
 end

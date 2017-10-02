@@ -283,6 +283,52 @@ RSpec.describe LazyLazer do
       model.write_attribute(:hello, '50')
       expect(model.hello).to eq('50')
     end
+
+    it "doesn't return the cached value" do
+      model_class.property(:hello, from: :foo)
+      model = model_class.new(foo: 'foo')
+      model.write_attribute(:hello, 'hello')
+      expect(model.hello).to eq('hello')
+    end
+
+    context 'when the model is reloaded' do
+      context 'when the new data contains the key' do
+        it 'is replaced' do
+          model_class.property(:hello, from: :foo)
+          model = model_class.new
+          model.write_attribute(:hello, 'hello')
+          allow(model).to receive(:lazer_reload).and_return(foo: 'foo')
+          expect(model.reload.hello).to eq('foo')
+        end
+      end
+
+      context "when the new data doesn't contain the key" do
+        it "isn't replaced" do
+          model_class.property(:hello, from: :foo)
+          model = model_class.new
+          model.write_attribute(:hello, 'hello')
+          allow(model).to receive(:lazer_reload).and_return(bar: 'bar')
+          expect(model.reload.hello).to eq('hello')
+        end
+      end
+    end
+  end
+
+  describe '#delete_attribute' do
+    it 'deletes source attributes' do
+      model_class.property(:hello, from: :foo, default: 'foo')
+      model = model_class.new(foo: 'bar')
+      model.delete_attribute(:hello)
+      expect(model.hello).to eq('foo')
+    end
+
+    it 'deletes writethrough attributes' do
+      model_class.property(:hello, from: :foo, default: 'foo')
+      model = model_class.new
+      model.write_attribute(:hello, 'hello')
+      model.delete_attribute(:hello)
+      expect(model.hello).to eq('foo')
+    end
   end
 
   describe '#assign_attributes' do
