@@ -342,17 +342,6 @@ RSpec.describe LazyLazer do
     end
   end
 
-  describe '#invalidate' do
-    it 'forces a call to #lazer_reload on the next call' do
-      model_class.property(:hello)
-      model = model_class.new(hello: 'world')
-      expect(model).to receive(:lazer_reload)
-      model.hello
-      model.send(:invalidate, :hello)
-      model.hello
-    end
-  end
-
   describe '#exists_locally?' do
     context 'if the key exists locally' do
       it 'returns true' do
