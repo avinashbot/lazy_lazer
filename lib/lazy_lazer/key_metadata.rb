@@ -9,10 +9,10 @@ module LazyLazer
     attr_accessor :source_key
 
     # @return [Boolean] whether the key must exist when creating the model
-    attr_accessor :required
+    attr_writer :required
 
     # @return [Boolean] whether the key must exist when loaded
-    attr_accessor :runtime_required
+    attr_writer :runtime_required
 
     # @return [Proc, Object] the default value or generator
     attr_accessor :default

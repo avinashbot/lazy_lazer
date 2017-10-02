@@ -60,6 +60,11 @@ module LazyLazer
 
   # The methods to extend the instance with.
   module InstanceMethods
+    extend Forwardable
+
+    def_delegators :@_lazer_model, :to_h, :inspect, :read_attribute, :write_attribute, :fully_loaded?, :fully_loaded!, :not_fully_loaded!, :invalidate, :exists_locally?
+    private :fully_loaded!, :not_fully_loaded!, :invalidate, :exists_locally?
+
     # Create a new instance of the class from a set of source attributes.
     # @param attributes [Hash] the model attributes
     # @return [void]
@@ -82,34 +87,6 @@ module LazyLazer
       true
     end
 
-    # Converts all the attributes that haven't been converted yet and returns the final hash.
-    # @return [Hash] a hash representation of the model
-    def to_h
-      @_lazer_model.parent_to_h
-    end
-
-    # @return [String] a human-friendly view of the model
-    def inspect
-      @_lazer_model.parent_inspect
-    end
-
-    # Reload the object. Calls {#lazer_reload}, then merges the results into the internal store.
-    # Also clears out the internal cache.
-    # @return [self] the updated object
-    def reload
-      new_attributes = lazer_reload.to_h
-      @_lazer_model.merge!(new_attributes)
-      self
-    end
-
-    # Return the value of the attribute.
-    # @param key_name [Symbol] the attribute name
-    # @return [Object] the returned value
-    # @raise MissingAttribute if the key was not found
-    def read_attribute(key_name)
-      @_lazer_model.read_attribute(key_name.to_sym)
-    end
-
     # Return the value of the attribute, returning nil if not found.
     # @param key_name [Symbol] the attribute name
     # @return [Object] the returned value
@@ -117,14 +94,6 @@ module LazyLazer
       read_attribute(key_name)
     rescue MissingAttribute
       nil
-    end
-
-    # Update an attribute.
-    # @param key_name [Symbol] the attribute to update
-    # @param new_value [Object] the new value
-    # @return [Object] the written value
-    def write_attribute(key_name, new_value)
-      @_lazer_model.write_attribute(key_name, new_value)
     end
 
     # Update multiple attributes at once.
@@ -136,9 +105,13 @@ module LazyLazer
     end
     alias attributes= assign_attributes
 
-    # @return [Boolean] whether the object is done with lazy loading
-    def fully_loaded?
-      @_lazer_model.fully_loaded
+    # Reload the object. Calls {#lazer_reload}, then merges the results into the internal store.
+    # Also clears out the internal cache.
+    # @return [self] the updated object
+    def reload
+      new_attributes = lazer_reload.to_h
+      @_lazer_model.merge!(new_attributes)
+      self
     end
 
     private
@@ -148,32 +121,6 @@ module LazyLazer
     def lazer_reload
       fully_loaded!
       {}
-    end
-
-    # Whether the key doesn't need to be lazily loaded.
-    # @param key_name [Symbol] the key to check
-    # @return [Boolean] whether the key exists locally.
-    def exists_locally?(key_name)
-      @_lazer_model.exists_locally?(key_name)
-    end
-
-    # Mark a key as tainted, forcing a reload on the next lookup.
-    # @param key_name [Symbol] the key to invalidate
-    # @return [void]
-    def invalidate(key_name)
-      @_lazer_model.invalidate(key_name)
-    end
-
-    # Mark the model as fully loaded.
-    # @return [void]
-    def fully_loaded!
-      @_lazer_model.fully_loaded = true
-    end
-
-    # Mark the model as not fully loaded.
-    # @return [void]
-    def not_fully_loaded!
-      @_lazer_model.fully_loaded = false
     end
   end
 end

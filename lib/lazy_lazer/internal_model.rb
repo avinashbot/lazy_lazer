@@ -3,9 +3,6 @@
 module LazyLazer
   # A delegator for internal operations.
   class InternalModel
-    # @return [Boolean] whether the model is fully loaded
-    attr_accessor :fully_loaded
-
     # Create an internal model with a reference to a public model.
     # @param key_metadata [KeyMetadataStore] a reference to a metadata store
     # @param parent [LazyLazer] a reference to a LazyLazer model
@@ -35,13 +32,13 @@ module LazyLazer
 
     # Converts all unconverted keys and packages them as a hash.
     # @return [Hash] the converted hash
-    def parent_to_h
+    def to_h
       todo = @key_metadata.keys - @cache_hash.keys
       todo.each_with_object(@cache_hash) { |key, cache| cache[key] = load_key_from_source(key) }.dup
     end
 
     # @return [String] the string representation of the parent
-    def parent_inspect
+    def inspect
       "#<#{@parent.class.name} (#{@fully_loaded ? 'loaded' : 'unloaded'}): [" + \
         @cache_hash.keys.join(', ') + ']>'
     end
@@ -66,11 +63,12 @@ module LazyLazer
     # @return [Object] the returned value
     # @raise MissingAttribute if the attribute wasn't found and there isn't a default
     def read_attribute(key_name)
-      if @invalidated.include?(key_name)
+      key_name_sym = key_name.to_sym
+      if @invalidated.include?(key_name_sym)
         @parent.reload
-        @invalidated.delete(key_name)
+        @invalidated.delete(key_name_sym)
       end
-      @cache_hash[key_name] ||= load_key_from_source(key_name)
+      @cache_hash[key_name_sym] ||= load_key_from_source(key_name_sym)
     end
 
     # Update an attribute.
@@ -82,6 +80,23 @@ module LazyLazer
         raise ArgumentError, "#{key_name} is not a valid attribute for #{parent}"
       end
       @cache_hash[key_name] = new_value
+    end
+
+    # Mark the model as fully loaded.
+    # @return [void]
+    def fully_loaded!
+      @fully_loaded = true
+    end
+
+    # Mark the model as not fully loaded.
+    # @return [void]
+    def not_fully_loaded!
+      @fully_loaded = false
+    end
+
+    # @return [Boolean] whether the object is done with lazy loading
+    def fully_loaded?
+      @fully_loaded
     end
 
     # Merge a hash into the model.
