@@ -15,21 +15,6 @@ module LazyLazer
       @fully_loaded = false
     end
 
-    # Verify that all the keys marked as required are present.
-    # @raise RequiredAttribute if a required attribute is missing
-    # @return [void]
-    def verify_required!
-      @key_metadata.required_properties.each do |key_name|
-        next if @source_hash.key?(@key_metadata.get(key_name).source_key)
-        raise RequiredAttribute, "#{@parent} requires `#{key_name}`"
-      end
-    end
-
-    # @return [Array] the identity properties
-    def required_properties
-      @key_metadata.required_properties
-    end
-
     # Converts all unconverted keys and packages them as a hash.
     # @return [Hash] the converted hash
     def to_h
@@ -99,7 +84,25 @@ module LazyLazer
       @fully_loaded
     end
 
+    # Verify that all the keys marked as required are present.
+    # @api private
+    # @raise RequiredAttribute if a required attribute is missing
+    # @return [void]
+    def verify_required!
+      @key_metadata.required_properties.each do |key_name|
+        next if @source_hash.key?(@key_metadata.get(key_name).source_key)
+        raise RequiredAttribute, "#{@parent} requires `#{key_name}`"
+      end
+    end
+
+    # @api private
+    # @return [Array] the identity properties
+    def required_properties
+      @key_metadata.required_properties
+    end
+
     # Merge a hash into the model.
+    # @api private
     # @param attributes [Hash<Symbol, Object>] the attributes to merge
     def merge!(attributes)
       @cache_hash.clear

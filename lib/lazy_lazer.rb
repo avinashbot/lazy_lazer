@@ -119,7 +119,6 @@ module LazyLazer
     # @abstract Provides reloading behaviour for lazy loading.
     # @return [Hash] the result of reloading the hash
     def lazer_reload
-      fully_loaded!
       {}
     end
   end
