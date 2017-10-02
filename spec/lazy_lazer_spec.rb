@@ -307,6 +307,24 @@ RSpec.describe LazyLazer do
     end
   end
 
+  describe '#exists_locally?' do
+    context 'if the key exists locally' do
+      it 'returns true' do
+        model_class.property(:hello)
+        model = model_class.new(hello: 'world')
+        expect(model.send(:exists_locally?, :hello)).to be(true)
+      end
+    end
+
+    context "if the key doesn't exist locally" do
+      it 'returns false' do
+        model_class.property(:hello)
+        model = model_class.new
+        expect(model.send(:exists_locally?, :hello)).to be(false)
+      end
+    end
+  end
+
   describe '#fully_loaded?' do
     it 'is false by default' do
       model = model_class.new

@@ -150,6 +150,13 @@ module LazyLazer
       {}
     end
 
+    # Whether the key doesn't need to be lazily loaded.
+    # @param key_name [Symbol] the key to check
+    # @return [Boolean] whether the key exists locally.
+    def exists_locally?(key_name)
+      @_lazer_model.exists_locally?(key_name)
+    end
+
     # Mark a key as tainted, forcing a reload on the next lookup.
     # @param key_name [Symbol] the key to invalidate
     # @return [void]

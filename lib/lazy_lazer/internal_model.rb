@@ -46,6 +46,14 @@ module LazyLazer
         @cache_hash.keys.join(', ') + ']>'
     end
 
+    # Whether the key doesn't need to be lazily loaded.
+    # @param key_name [Symbol] the key to check
+    # @return [Boolean] whether the key exists locally.
+    def exists_locally?(key_name)
+      ensure_metadata_exists(key_name)
+      @source_hash.key?(@key_metadata.get(key_name).source_key)
+    end
+
     # Mark a key as tainted, forcing a reload on the next lookup.
     # @param key_name [Symbol] the key to invalidate
     # @return [void]
