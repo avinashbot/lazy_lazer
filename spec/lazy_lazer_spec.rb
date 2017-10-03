@@ -241,11 +241,20 @@ RSpec.describe LazyLazer do
       expect(model_class.new(hello: 'world').to_h).to be_a(Hash)
     end
 
-    it 'coerces uncoerced attributes' do
-      called = false
-      model_class.property(:hello, with: ->(_) { called = true })
-      model_class.new(hello: 1).to_h
-      expect(called).to be(true)
+    context 'when :strict is true' do
+      it 'raises an error on unloaded attributes' do
+        model_class.property(:hello)
+        expect { model_class.new.to_h(strict: true) }.to raise_error(LazyLazer::MissingAttribute)
+      end
+    end
+
+    context 'when :strict is false' do
+      it "skips attributes that don't exist" do
+        model_class.property(:hello)
+        model_class.property(:world)
+        hash = model_class.new(hello: 1).to_h(strict: false)
+        expect(hash).to eq(hello: 1)
+      end
     end
   end
 

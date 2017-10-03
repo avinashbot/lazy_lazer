@@ -21,10 +21,10 @@ module LazyLazer
     # @return [Hash] the converted hash
     def to_h(strict: false)
       todo = @key_metadata.keys - @cache.keys
-      todo.each do |key|
-        strict ? load_key_strict(key) : load_key_lenient(key)
+      todo.each_with_object({}) do |key, hsh|
+        loaded_key = (strict ? load_key_strict(key) : load_key_lenient(key))
+        hsh[key] = loaded_key if exists_locally?(key)
       end
-      @cache.dup
     end
 
     # @return [String] the string representation of the parent
