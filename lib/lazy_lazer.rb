@@ -67,7 +67,7 @@ module LazyLazer
     def_delegators :@_lazer_model,
                    :to_h, :inspect, :read_attribute, :write_attribute, :delete_attribute,
                    :fully_loaded?, :fully_loaded!, :not_fully_loaded!, :exists_locally?
-    private :fully_loaded!, :not_fully_loaded!, :invalidate, :exists_locally?
+    private :fully_loaded!, :not_fully_loaded!, :exists_locally?
 
     # Create a new instance of the class from a set of source attributes.
     # @param attributes [Hash] the model attributes

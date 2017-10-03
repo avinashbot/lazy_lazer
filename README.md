@@ -15,13 +15,17 @@ class User
   property :twitter_handle, :nil
   property :favorite_ice_cream
 
-  def try_another_flavor!
+  def say_flavor!
     if exists_locally?(:favorite_ice_cream)
       puts "#{name} currently likes #{favorite_ice_cream}."
     else
       puts "#{name} doesn't have a favorite ice cream flavor yet."
     end
-    invalidate(:favorite_ice_cream)
+  end
+
+  def try_another_flavor!
+    delete_attribute(:favorite_ice_cream)
+    not_fully_loaded!
     puts "#{name} just tried #{favorite_ice_cream}. They love it!"
   end
 
@@ -35,7 +39,7 @@ end
 
 user = User.new(name: 'Blinky', creation_time_utc: 1500000000, age: '21')
 
-user.name             #=> 'Blinky'
+user.name           #=> 'Blinky'
 user.email          #=> "unknown@example.com"
 user.created_at     #=> 2017-07-14 03:40:00 +0100
 user.age            #=> 21
@@ -45,9 +49,8 @@ user.favorite_ice_cream         #=> "chocolate"
 user.favorite_ice_cream         #=> "chocolate"
 user.reload.favorite_ice_cream  #=> "vanilla"
 
-user.try_another_flavor!
-#=> Blinky currently likes vanilla.
-#=> Blinky just tried strawberry. They love it!
+user.say_flavor!         #=> Blinky currently likes vanilla.
+user.try_another_flavor! #=> Blinky just tried strawberry. They love it!
 ```
 
 <p align="center">
