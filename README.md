@@ -39,7 +39,7 @@ end
 
 user = User.new(name: 'Blinky', creation_time_utc: 1500000000, age: '21')
 
-user.name           #=> 'Blinky'
+user.name           #=> "Blinky"
 user.email          #=> "unknown@example.com"
 user.created_at     #=> 2017-07-14 03:40:00 +0100
 user.age            #=> 21
